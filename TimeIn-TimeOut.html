@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pro Time Tracker</title>
+  <style>
+    :root {
+      --face: #0f172a;
+      --ring: #1e293b;
+      --accent: #3b82f6;
+      --accent2: #60a5fa;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --fg: #1e293b;
+      --fg2: #64748b;
+      --border: #e2e8f0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px;
+      min-height: 100vh;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ── Clock Card ── */
+    .clock-card {
+      background: var(--face);
+      border-radius: 20px;
+      padding: 1.5rem 1rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      border: 1px solid #1e293b;
+    }
+
+    canvas#clockFace { display: block; }
+
+    .digital-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+    .digital-time {
+      font-family: 'Courier New', monospace;
+      font-size: 26px;
+      font-weight: 600;
+      color: #60a5fa;
+      letter-spacing: 2px;
+    }
+    .digital-ampm {
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: #94a3b8;
+      letter-spacing: 1px;
+    }
+    .digital-date {
+      font-size: 12px;
+      color: #64748b;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding-bottom: 4px;
+    }
+
+    /* ── Config Card ── */
+    .config-card {
+      background: var(--card);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--fg2);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .row2 { display: flex; gap: 10px; }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+    .field label {
+      font-size: 12px;
+      color: var(--fg2);
+    }
+    .field input {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      color: var(--fg);
+      font-size: 15px;
+      font-family: 'Courier New', monospace;
+      width: 100%;
+      transition: border-color 0.2s;
+    }
+    .field input:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: #fff;
+    }
+    .field input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ── Result Card ── */
+    .result-card {
+      background: #0f172a;
+      border-radius: 16px;
+      border: 1px solid #1e3a5f;
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .result-label {
+      font-size: 11px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+    .result-value {
+      font-size: 32px;
+      font-weight: 600;
+      color: #60a5fa;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 2px;
+      line-height: 1.2;
+    }
+    .result-military {
+      font-size: 11px;
+      color: #475569;
+      font-family: 'Courier New', monospace;
+      margin-bottom: 4px;
+    }
+    .result-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    .result-tag {
+      font-size: 11px;
+      color: #94a3b8;
+      background: #1e293b;
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1px solid #334155;
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Clock -->
+  <div class="clock-card">
+    <canvas id="clockFace" width="200" height="200"></canvas>
+    <div class="digital-row">
+      <span class="digital-time" id="dTime">--:--:--</span>
+      <span class="digital-ampm" id="dAmPm">--</span>
+    </div>
+    <div class="digital-date" id="dDate">--</div>
+  </div>
+
+  <!-- Config -->
+  <div class="config-card">
+    <div class="section-label">Configuration</div>
+    <div class="field">
+      <label for="timeInput">Time-in</label>
+      <input id="timeInput" type="time" value="08:45" />
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Shift</label>
+        <input type="text" value="+8 hrs" disabled />
+      </div>
+      <div class="field">
+        <label for="breakMin">Break (min)</label>
+        <input id="breakMin" type="number" value="30" min="0" max="120" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="result-card">
+    <div class="result-label">Scheduled Time-out</div>
+    <div class="result-value" id="resValue">--:-- --</div>
+    <div class="result-military" id="resMil"></div>
+    <div class="result-row">
+      <span class="result-tag" id="resDuration"></span>
+      <span class="result-tag" id="resStatus"></span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  /* ── Analog Clock ── */
+  const canvas = document.getElementById('clockFace');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height, R = W / 2;
+
+  function drawClock() {
+    const now = new Date();
+    const sec = now.getSeconds();
+    const min = now.getMinutes();
+    const hr  = now.getHours() % 12;
+    const ms  = now.getMilliseconds();
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    ctx.translate(R, R);
+
+    // Face
+    ctx.beginPath();
+    ctx.arc(0, 0, R - 2, 0, Math.PI * 2);
+    ctx.fillStyle = '#0f172a';
+    ctx.fill();
+    ctx.strokeStyle = '#1e3a5f';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Inner ring
+    ctx.beginPath();
+    ctx.arc(0, 0, R - 6, 0, Math.PI * 2);
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Ticks
+    for (let i = 0; i < 60; i++) {
+      const angle = (i / 60) * Math.PI * 2 - Math.PI / 2;
+      const isMajor = i % 5 === 0;
+      const outer = R - 10;
+      const inner = isMajor ? R - 20 : R - 15;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+      ctx.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+      ctx.strokeStyle = isMajor ? '#94a3b8' : '#334155';
+      ctx.lineWidth = isMajor ? 1.5 : 0.75;
+      ctx.stroke();
+    }
+
+    // Hour numbers
+    ctx.fillStyle = '#64748b';
+    ctx.font = '500 9px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (let i = 1; i <= 12; i++) {
+      const angle = (i / 12) * Math.PI * 2 - Math.PI / 2;
+      const nr = R - 30;
+      ctx.fillText(i, Math.cos(angle) * nr, Math.sin(angle) * nr);
+    }
+
+    // Hand helper
+    function hand(angle, length, width, color) {
+      ctx.save();
+      ctx.rotate(angle);
+      ctx.beginPath();
+      ctx.moveTo(0, length * 0.2);
+      ctx.lineTo(0, -length);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    const secAngle = ((sec + ms / 1000) / 60) * Math.PI * 2 - Math.PI / 2;
+    const minAngle = ((min + sec / 60) / 60) * Math.PI * 2 - Math.PI / 2;
+    const hrAngle  = ((hr + min / 60) / 12) * Math.PI * 2 - Math.PI / 2;
+
+    hand(hrAngle,  R * 0.48, 3,   '#f1f5f9');
+    hand(minAngle, R * 0.65, 2,   '#60a5fa');
+    hand(secAngle, R * 0.72, 1,   '#f87171');
+
+    // Center cap
+    ctx.beginPath();
+    ctx.arc(0, 0, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#f87171';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, 0, 2, 0, Math.PI * 2);
+    ctx.fillStyle = '#f8fafc';
+    ctx.fill();
+
+    ctx.restore();
+
+    // Digital readout
+    const dStr = now.toLocaleTimeString('en-US', {
+      hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true
+    });
+    const parts = dStr.split(' ');
+    document.getElementById('dTime').textContent = parts[0];
+    document.getElementById('dAmPm').textContent = parts[1] || '';
+
+    const days   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    document.getElementById('dDate').textContent =
+      `${days[now.getDay()]}  ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+  }
+
+  /* ── Calculation Engine ── */
+  function calculate() {
+    const t   = document.getElementById('timeInput').value;
+    const brk = parseInt(document.getElementById('breakMin').value) || 0;
+    if (!t) return;
+
+    const [hh, mm] = t.split(':').map(Number);
+    let total = (hh * 60) + mm + 480 + brk;
+    total = ((total % 1440) + 1440) % 1440;
+
+    const rH = Math.floor(total / 60);
+    const rM = total % 60;
+    const ap = rH >= 12 ? 'PM' : 'AM';
+    const dH = rH % 12 || 12;
+    const dM = String(rM).padStart(2, '0');
+
+    document.getElementById('resValue').textContent  = `${dH}:${dM} ${ap}`;
+    document.getElementById('resMil').textContent    = `24h: ${String(rH).padStart(2,'0')}:${dM}`;
+    document.getElementById('resDuration').textContent = `8h shift + ${brk}min break`;
+
+    const now    = new Date();
+    const outMin = rH * 60 + rM;
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const diff   = outMin - nowMin;
+
+    let status = '';
+    if (diff > 0)       status = `${Math.floor(diff / 60)}h ${diff % 60}m remaining`;
+    else if (diff < 0)  status = `${Math.abs(Math.floor(diff / 60))}h ${Math.abs(diff % 60)}m overtime`;
+    else                status = 'Time to clock out!';
+
+    document.getElementById('resStatus').textContent = status;
+  }
+
+  /* ── Init ── */
+  setInterval(drawClock, 50);
+  drawClock();
+  calculate();
+
+  document.getElementById('timeInput').addEventListener('input', calculate);
+  document.getElementById('breakMin').addEventListener('input', calculate);
+</script>
+</body>
+</html>

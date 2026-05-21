@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced PDF Merger</title>
+    
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #f4f4f9;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+        h2 { text-align: center; margin-top: 0; }
+        
+        input[type="file"] {
+            width: 90%;
+            padding: 10px;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+
+        .options-panel {
+            background: #eef2f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        /* Drag and Drop List Styles */
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0 0 20px 0;
+        }
+        .draggable-item {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            padding: 10px 15px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+        .draggable-item:active {
+            cursor: grabbing;
+        }
+        .draggable-item.over {
+            border: 2px dashed #0056b3;
+            background-color: #f0f8ff;
+        }
+        .drag-icon {
+            margin-right: 10px;
+            color: #888;
+            font-weight: bold;
+        }
+
+        button.primary-btn {
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+        }
+        button.primary-btn:hover { background-color: #004494; }
+        
+        #status {
+            margin-top: 15px;
+            font-weight: bold;
+            text-align: center;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Merge & Organize PDFs</h2>
+        
+        <input type="file" id="fileInput" multiple accept="application/pdf" title="Select PDFs">
+        
+        <div class="options-panel">
+            <label>
+                <input type="checkbox" id="optimizeSize" checked>
+                <strong>Optimize File Size</strong> (Uses Object Streams to compress internal data)
+            </label>
+        </div>
+
+        <p style="font-size: 14px; color: #555; margin-bottom: 5px;"><strong>Order of Files:</strong> (Drag to rearrange)</p>
+        <ul id="fileList">
+            </ul>
+        
+        <button class="primary-btn" onclick="mergePDFs()">Merge & Download</button>
+        
+        <div id="status"></div>
+    </div>
+
+    <script>
+        let fileArray = [];
+        let dragStartIndex;
+
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const statusText = document.getElementById('status');
+
+        // 1. Listen for file selection
+        fileInput.addEventListener('change', function(e) {
+            fileArray = Array.from(e.target.files);
+            renderFileList();
+            statusText.innerText = ""; // Clear previous status
+        });
+
+        // 2. Render the Drag-and-Drop List
+        function renderFileList() {
+            fileList.innerHTML = '';
+            fileArray.forEach((file, index) => {
+                const li = document.createElement('li');
+                li.setAttribute('draggable', true);
+                li.setAttribute('data-index', index);
+                li.className = 'draggable-item';
+                li.innerHTML = `<span class="drag-icon">☰</span> ${file.name}`;
+                
+                // Add drag events
+                li.addEventListener('dragstart', dragStart);
+                li.addEventListener('dragover', dragOver);
+                li.addEventListener('drop', dragDrop);
+                li.addEventListener('dragenter', dragEnter);
+                li.addEventListener('dragleave', dragLeave);
+                
+                fileList.appendChild(li);
+            });
+        }
+
+        // 3. Drag and Drop Logic
+        function dragStart(e) {
+            dragStartIndex = +this.getAttribute('data-index');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+        function dragOver(e) { e.preventDefault(); }
+        function dragEnter(e) { e.preventDefault(); this.classList.add('over'); }
+        function dragLeave() { this.classList.remove('over'); }
+        
+        function dragDrop(e) {
+            const dragEndIndex = +this.getAttribute('data-index');
+            swapItems(dragStartIndex, dragEndIndex);
+            this.classList.remove('over');
+        }
+
+        function swapItems(fromIndex, toIndex) {
+            const itemOne = fileArray[fromIndex];
+            fileArray.splice(fromIndex, 1);
+            fileArray.splice(toIndex, 0, itemOne);
+            renderFileList(); // Re-draw list with new order
+        }
+
+        // 4. Merge the PDFs based on the visual order
+        async function mergePDFs() {
+            if (fileArray.length < 2) {
+                statusText.style.color = "red";
+                statusText.innerText = "Please select at least 2 PDF files to merge.";
+                return;
+            }
+
+            statusText.style.color = "#333";
+            statusText.innerText = "Merging files... Please wait.";
+
+            try {
+                const { PDFDocument } = PDFLib;
+                const mergedPdf = await PDFDocument.create();
+
+                // Loop through the reordered array
+                for (let i = 0; i < fileArray.length; i++) {
+                    const file = fileArray[i];
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await PDFDocument.load(arrayBuffer);
+                    const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                    copiedPages.forEach((page) => mergedPdf.addPage(page));
+                }
+
+                // Check the compression toggle
+                const optimizeEnabled = document.getElementById('optimizeSize').checked;
+
+                // Save with or without Object Streams based on user choice
+                const mergedPdfBytes = await mergedPdf.save({ 
+                    useObjectStreams: optimizeEnabled 
+                });
+
+                // Trigger Download
+                const blob = new Blob([mergedPdfBytes], { type: "application/pdf" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = "Merged_Organized_Document.pdf";
+                document.body.appendChild(link);
+                link.click();
+                
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                statusText.style.color = "green";
+                statusText.innerText = "Success! Your merged PDF is downloading.";
+
+            } catch (error) {
+                console.error("Error merging PDFs:", error);
+                statusText.style.color = "red";
+                statusText.innerText = "An error occurred. Check the console for details.";
+            }
+        }
+    </script>
+</body>
+</html>

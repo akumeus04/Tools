@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>App Update Pusher</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-10 flex justify-center">
+  <div class="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md">
+    <h2 class="text-2xl font-bold mb-6 text-pink-500">Push App Update</h2>
+    
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm mb-1">New Version (e.g., 1.0.5)</label>
+        <input type="text" id="version" class="w-full bg-gray-700 p-2 rounded text-white" placeholder="1.0.5">
+      </div>
+      
+      <div>
+        <label class="block text-sm mb-1">Release Notes</label>
+        <textarea id="notes" class="w-full bg-gray-700 p-2 rounded text-white h-24" placeholder="- Added swipe to reply&#10;- Fixed bugs"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm mb-1">Direct Download Link (GitHub, Drive, etc.)</label>
+        <input type="url" id="downloadUrl" class="w-full bg-gray-700 p-2 rounded text-white" placeholder="https://...">
+      </div>
+
+      <button id="uploadBtn" class="w-full bg-pink-600 hover:bg-pink-700 py-3 rounded font-bold mt-4 transition-colors">
+        Push Update to Users
+      </button>
+      
+      <p id="status" class="text-center text-sm text-gray-400 mt-4"></p>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+    // 🔴 PASTE YOUR FIREBASE CONFIG HERE 🔴
+    const firebaseConfig = {
+      apiKey: "AIzaSyA3iIqEl718iLfHKfn9S0d_60PAN4BtcS0",
+      authDomain: "ourmessenger-76636.firebaseapp.com",
+      projectId: "ourmessenger-76636"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    document.getElementById('uploadBtn').addEventListener('click', async () => {
+      const version = document.getElementById('version').value;
+      const notes = document.getElementById('notes').value;
+      const downloadUrl = document.getElementById('downloadUrl').value;
+      const statusEl = document.getElementById('status');
+
+      if (!version || !downloadUrl) return alert('Version and Download Link are required!');
+
+      try {
+        statusEl.innerText = "Pushing update to database...";
+        statusEl.className = "text-center text-sm text-yellow-400 mt-4";
+
+        // Write directly to Firestore - No Firebase Storage needed!
+        await setDoc(doc(db, "app_config", "latest_update"), {
+          version: version,
+          releaseNotes: notes,
+          downloadUrl: downloadUrl, 
+          isMandatory: false,
+          timestamp: serverTimestamp()
+        });
+
+        statusEl.innerText = "✅ Update Pushed Successfully!";
+        statusEl.className = "text-center text-sm text-green-400 mt-4";
+        
+      } catch (error) {
+        console.error(error);
+        statusEl.innerText = "❌ Error: " + error.message;
+        statusEl.className = "text-center text-sm text-red-400 mt-4";
+      }
+    });
+  </script>
+</body>
+</html>
