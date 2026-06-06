@@ -7,6 +7,7 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     
     <style>
         :root {
@@ -168,14 +169,106 @@
         .loader { color: var(--primary); display: none; }
         .success { color: #10B981; }
         .error { color: #EF4444; }
+
+        /* PDF to JPG extras */
+        .jpg-settings {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .jpg-settings .settings-panel {
+            flex: 1;
+            min-width: 140px;
+            margin-bottom: 0;
+        }
+        .progress-wrap {
+            display: none;
+            margin-bottom: 12px;
+        }
+        .progress-bg {
+            background: #E5E7EB;
+            border-radius: 99px;
+            height: 6px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+        #jpgProgressBar {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 99px;
+            width: 0%;
+            transition: width 0.25s ease;
+        }
+        .progress-label {
+            font-size: 12px;
+            color: #6B7280;
+        }
+        .pages-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+        .page-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            transition: box-shadow 0.2s;
+        }
+        .page-card:hover { box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .page-card img {
+            width: 100%;
+            display: block;
+            background: #fff;
+        }
+        .page-card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 8px;
+            border-top: 1px solid var(--border);
+        }
+        .page-num-label {
+            font-size: 11px;
+            color: #9CA3AF;
+        }
+        .page-dl-link {
+            font-size: 11px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .page-dl-link:hover { text-decoration: underline; }
+        .btn-outline {
+            background: #fff;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            width: 100%;
+            padding: 11px;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            margin-top: 8px;
+        }
+        .btn-outline:hover:not(:disabled) { background: #EEF2FF; }
+        .btn-outline:disabled { border-color: #9CA3AF; color: #9CA3AF; cursor: not-allowed; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('convert')">Convert to PDF</button>
-        <button class="tab-btn" onclick="switchTab('merge')">Merge PDFs</button>
+        <button class="tab-btn active" onclick="switchTab('convert', this)">Convert to PDF</button>
+        <button class="tab-btn" onclick="switchTab('merge', this)">Merge PDFs</button>
+        <button class="tab-btn" onclick="switchTab('jpg', this)">PDF to JPG</button>
     </div>
 
     <div id="convert-tab" class="tab-content active">
@@ -222,15 +315,55 @@
         <button class="btn" id="mergeBtn" disabled>Merge & Download</button>
         <div class="status" id="mergeStatus"></div>
     </div>
-</div>
+
+    <!-- PDF to JPG Tab -->
+    <div id="jpg-tab" class="tab-content">
+        <h2>PDF to JPG Images</h2>
+
+        <div class="drop-zone" id="jpgDropZone">
+            <p>Drag & drop a PDF file here<br><small>(or click to select)</small></p>
+            <input type="file" id="jpgInput" accept="application/pdf">
+        </div>
+
+        <div class="jpg-settings">
+            <div class="settings-panel" style="margin-bottom:0">
+                <label>Quality:</label>
+                <select id="jpgQuality">
+                    <option value="0.95">High (95%)</option>
+                    <option value="0.80" selected>Medium (80%)</option>
+                    <option value="0.60">Low (60%)</option>
+                </select>
+            </div>
+            <div class="settings-panel" style="margin-bottom:0">
+                <label>Scale:</label>
+                <select id="jpgScale">
+                    <option value="1">1× (72 dpi)</option>
+                    <option value="1.5">1.5× (108 dpi)</option>
+                    <option value="2" selected>2× (144 dpi)</option>
+                    <option value="3">3× (216 dpi)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="progress-wrap" id="jpgProgressWrap">
+            <div class="progress-bg"><div id="jpgProgressBar"></div></div>
+            <span class="progress-label" id="jpgProgressText">Preparing…</span>
+        </div>
+
+        <div class="pages-grid" id="jpgPagesGrid"></div>
+
+        <button class="btn" id="jpgConvertBtn" disabled>Convert to JPG</button>
+        <button class="btn-outline" id="jpgDownloadAllBtn" style="display:none" disabled>⬇ Download All JPGs</button>
+        <div class="status" id="jpgStatus"></div>
+        <canvas id="jpgCanvas" style="display:none"></canvas>
+    </div>
 
 <script>
     // --- TAB LOGIC ---
-    function switchTab(tabId) {
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-        
-        event.target.classList.add('active');
+        btn.classList.add('active');
         document.getElementById(`${tabId}-tab`).classList.add('active');
     }
 
@@ -448,6 +581,139 @@
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+    }
+
+
+    /* =========================================================
+       PDF TO JPG LOGIC (pdf.js)
+       ========================================================= */
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    let jpgPdfDoc = null;
+    let jpgPdfFileName = 'document';
+    let jpgBlobs = [];
+
+    const jpgConvertBtn   = document.getElementById('jpgConvertBtn');
+    const jpgDownloadBtn  = document.getElementById('jpgDownloadAllBtn');
+    const jpgStatus       = document.getElementById('jpgStatus');
+    const jpgPagesGrid    = document.getElementById('jpgPagesGrid');
+    const jpgProgressWrap = document.getElementById('jpgProgressWrap');
+    const jpgProgressBar  = document.getElementById('jpgProgressBar');
+    const jpgProgressText = document.getElementById('jpgProgressText');
+
+    setupDropZone('jpgDropZone', 'jpgInput', async (files) => {
+        const file = files[0];
+        if (!file || file.type !== 'application/pdf') {
+            alert('Please select a PDF file.');
+            return;
+        }
+        jpgStatus.innerHTML = '';
+        jpgPagesGrid.innerHTML = '';
+        jpgDownloadBtn.style.display = 'none';
+        jpgBlobs = [];
+        jpgPdfFileName = file.name.replace(/\.pdf$/i, '');
+
+        const arrayBuffer = await file.arrayBuffer();
+        jpgPdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        jpgStatus.innerHTML = `<span style="color:#6B7280">Loaded: <strong>${file.name}</strong> (${jpgPdfDoc.numPages} page${jpgPdfDoc.numPages > 1 ? 's' : ''})</span>`;
+        jpgConvertBtn.disabled = false;
+    });
+
+    jpgConvertBtn.addEventListener('click', async () => {
+        if (!jpgPdfDoc) return;
+        const scale   = parseFloat(document.getElementById('jpgScale').value);
+        const quality = parseFloat(document.getElementById('jpgQuality').value);
+        const total   = jpgPdfDoc.numPages;
+
+        jpgBlobs = [];
+        jpgPagesGrid.innerHTML = '';
+        jpgConvertBtn.disabled = true;
+        jpgDownloadBtn.style.display = 'none';
+        jpgProgressWrap.style.display = 'block';
+        jpgStatus.innerHTML = '';
+
+        const canvas = document.getElementById('jpgCanvas');
+        const ctx    = canvas.getContext('2d');
+
+        try {
+            for (let i = 1; i <= total; i++) {
+                jpgProgressBar.style.width = Math.round(((i - 1) / total) * 100) + '%';
+                jpgProgressText.textContent = `Rendering page ${i} of ${total}…`;
+
+                const page     = await jpgPdfDoc.getPage(i);
+                const viewport = page.getViewport({ scale });
+                canvas.width   = viewport.width;
+                canvas.height  = viewport.height;
+
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                await page.render({ canvasContext: ctx, viewport }).promise;
+
+                const dataUrl  = canvas.toDataURL('image/jpeg', quality);
+                const blob     = dataURLtoBlob(dataUrl);
+                const filename = `${jpgPdfFileName}_page${String(i).padStart(3,'0')}.jpg`;
+                jpgBlobs.push({ blob, filename });
+
+                // Add thumbnail card
+                const card = document.createElement('div');
+                card.className = 'page-card';
+                const img  = document.createElement('img');
+                img.src    = dataUrl;
+                img.alt    = `Page ${i}`;
+                img.loading = 'lazy';
+
+                const footer = document.createElement('div');
+                footer.className = 'page-card-footer';
+                footer.innerHTML = `<span class="page-num-label">Page ${i}</span>`;
+
+                const dlLink = document.createElement('a');
+                dlLink.className = 'page-dl-link';
+                dlLink.href      = URL.createObjectURL(blob);
+                dlLink.download  = filename;
+                dlLink.textContent = '⬇ Save';
+                footer.appendChild(dlLink);
+
+                card.appendChild(img);
+                card.appendChild(footer);
+                jpgPagesGrid.appendChild(card);
+            }
+
+            jpgProgressBar.style.width = '100%';
+            jpgProgressText.textContent = 'Done!';
+
+            setTimeout(() => {
+                jpgProgressWrap.style.display = 'none';
+                const kb = jpgBlobs.reduce((s, b) => s + b.blob.size, 0) / 1024;
+                const sizeStr = kb > 1024 ? `${(kb/1024).toFixed(2)} MB` : `${kb.toFixed(0)} KB`;
+                jpgStatus.innerHTML = `<span class="success">✓ ${total} JPG${total > 1 ? 's' : ''} ready · ${sizeStr} total</span>`;
+                jpgDownloadBtn.style.display = 'block';
+                jpgDownloadBtn.disabled = false;
+            }, 500);
+
+        } catch (e) {
+            console.error(e);
+            jpgStatus.innerHTML = `<span class="error">Error rendering PDF.</span>`;
+            jpgProgressWrap.style.display = 'none';
+        }
+
+        jpgConvertBtn.disabled = false;
+    });
+
+    jpgDownloadBtn.addEventListener('click', async () => {
+        for (let i = 0; i < jpgBlobs.length; i++) {
+            triggerDownload(jpgBlobs[i].blob, jpgBlobs[i].filename);
+            if (jpgBlobs.length > 1) await new Promise(r => setTimeout(r, 100));
+        }
+    });
+
+    function dataURLtoBlob(dataUrl) {
+        const [header, data] = dataUrl.split(',');
+        const mime   = header.match(/:(.*?);/)[1];
+        const binary = atob(data);
+        const arr    = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
+        return new Blob([arr], { type: mime });
     }
 </script>
 
