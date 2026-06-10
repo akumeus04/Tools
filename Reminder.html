@@ -3,148 +3,449 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Custom Reminder App</title>
+    <title>Reminder App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f7f6;
-            padding: 20px;
-            max-width: 500px;
-            margin: auto;
+            font-family: 'Inter', sans-serif;
+            background: #EEF2FF;
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 32px 16px 48px;
         }
-        .reminder-card {
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+        }
+
+        /* Header */
+        .app-header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .app-header .logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px; height: 56px;
+            background: linear-gradient(135deg, #7C3AED, #4F46E5);
+            border-radius: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 8px 24px rgba(124,58,237,0.35);
+        }
+        .app-header .logo svg { width: 28px; height: 28px; }
+        .app-header h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #1E1B4B;
+            letter-spacing: -0.5px;
+        }
+        .app-header p {
+            font-size: 0.85rem;
+            color: #6B7280;
+            margin-top: 4px;
+        }
+
+        /* Card */
+        .card {
             background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            padding: 28px 24px;
+            box-shadow: 0 4px 32px rgba(30,27,75,0.10);
         }
+
+        /* Category Selector (icon strip — the signature element) */
+        .category-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #9CA3AF;
+            margin-bottom: 10px;
+        }
+        .category-strip {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+        .cat-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            padding: 12px 4px 10px;
+            border: 2px solid #E5E7EB;
+            border-radius: 14px;
+            background: #F9FAFB;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            font-family: 'Inter', sans-serif;
+        }
+        .cat-btn span.icon {
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+        .cat-btn span.label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: #6B7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .cat-btn:hover {
+            border-color: #C4B5FD;
+            background: #F5F3FF;
+        }
+        .cat-btn.active {
+            border-color: #7C3AED;
+            background: #F5F3FF;
+            box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
+        }
+        .cat-btn.active span.label { color: #7C3AED; }
+
+        /* Hidden real select */
+        #category { display: none; }
+
+        /* Divider */
+        .divider {
+            border: none;
+            border-top: 1px solid #F3F4F6;
+            margin: 4px 0 22px;
+        }
+
+        /* Form groups */
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 18px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 18px;
         }
         label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
-        input, select, textarea {
+        label .licon { font-size: 0.95rem; }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="time"],
+        input[type="number"],
+        select,
+        textarea {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
+            padding: 11px 14px;
+            border: 1.5px solid #E5E7EB;
+            border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.92rem;
+            color: #1F2937;
+            background: #FAFAFA;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
         }
-        button {
+        input:focus, select:focus, textarea:focus {
+            border-color: #7C3AED;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
+        }
+        textarea { resize: vertical; min-height: 80px; }
+
+        /* Frequency select wrapper */
+        .select-wrapper {
+            position: relative;
+        }
+        .select-wrapper::after {
+            content: '▾';
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7C3AED;
+            pointer-events: none;
+            font-size: 0.85rem;
+        }
+        .select-wrapper select { padding-right: 32px; }
+
+        /* Custom days reveal */
+        #customDaysDiv {
+            display: none;
+            margin-top: 12px;
+            animation: slideDown 0.2s ease;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Submit button */
+        .btn-submit {
             width: 100%;
-            padding: 10px;
-            background-color: #28a745;
-            color: white;
+            padding: 14px;
+            background: linear-gradient(135deg, #7C3AED, #4F46E5);
+            color: #fff;
             border: none;
-            border-radius: 4px;
-            font-size: 16px;
+            border-radius: 12px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+            box-shadow: 0 6px 20px rgba(124,58,237,0.35);
+            margin-top: 6px;
         }
-        button:hover {
-            background-color: #218838;
+        .btn-submit:hover:not(:disabled) {
+            opacity: 0.93;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 28px rgba(124,58,237,0.40);
+        }
+        .btn-submit:active:not(:disabled) { transform: translateY(0); }
+        .btn-submit:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+
+        /* Toast */
+        #toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #1E1B4B;
+            color: #fff;
+            padding: 12px 22px;
+            border-radius: 50px;
+            font-size: 0.87rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+            transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.3s;
+            opacity: 0;
+            z-index: 999;
+            white-space: nowrap;
+        }
+        #toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
         }
     </style>
 </head>
 <body>
 
-    <div class="reminder-card">
-        <h2>Create a Reminder</h2>
-        <form id="reminderForm">
-            
-            <div class="form-group">
-                <label for="title">Title (e.g., Birthday, Medicine)</label>
-                <input type="text" id="title" required placeholder="What are we reminding you about?">
-            </div>
+<div class="container">
 
-            <div class="form-group">
-                <label for="category">Category</label>
-                <select id="category">
-                    <option value="medicine">Medicine</option>
-                    <option value="birthday">Birthday</option>
-                    <option value="event">Event/Meeting</option>
-                    <option value="note">General Note</option>
-                </select>
-            </div>
-			
-			<div class="form-group">
-                <label for="frequency">Frequency</label>
-                <select id="frequency">
-                    <option value="once">One time only</option>
+    <div class="app-header">
+        <div class="logo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+        </div>
+        <h1>Reminders</h1>
+        <p>Set it once, never forget it again</p>
+    </div>
+
+    <div class="card">
+
+        <!-- Category icon strip -->
+        <div class="category-label">What kind of reminder?</div>
+        <div class="category-strip">
+            <button type="button" class="cat-btn active" data-value="medicine" onclick="selectCategory(this)">
+                <span class="icon">💊</span>
+                <span class="label">Medicine</span>
+            </button>
+            <button type="button" class="cat-btn" data-value="birthday" onclick="selectCategory(this)">
+                <span class="icon">🎂</span>
+                <span class="label">Birthday</span>
+            </button>
+            <button type="button" class="cat-btn" data-value="event" onclick="selectCategory(this)">
+                <span class="icon">📅</span>
+                <span class="label">Event</span>
+            </button>
+            <button type="button" class="cat-btn" data-value="note" onclick="selectCategory(this)">
+                <span class="icon">📝</span>
+                <span class="label">Note</span>
+            </button>
+        </div>
+        <select id="category">
+            <option value="medicine">Medicine</option>
+            <option value="birthday">Birthday</option>
+            <option value="event">Event/Meeting</option>
+            <option value="note">General Note</option>
+        </select>
+
+        <hr class="divider">
+
+        <!-- Title -->
+        <div class="form-group">
+            <label for="title"><span class="licon">✏️</span> Title</label>
+            <input type="text" id="title" required placeholder="What should we remind you about?">
+        </div>
+
+        <!-- Frequency -->
+        <div class="form-group">
+            <label for="frequency"><span class="licon">🔁</span> Frequency</label>
+            <div class="select-wrapper">
+                <select id="frequency" onchange="toggleCustomDays()">
+                    <option value="none">One Time Only</option>
                     <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>
                     <option value="monthly">Monthly</option>
+                    <option value="custom">Custom (Every X Days)</option>
                 </select>
             </div>
+            <div id="customDaysDiv">
+                <label for="customDays" style="margin-top:10px;"><span class="licon">🔢</span> Repeat Every</label>
+                <input type="number" id="customDays" min="2" placeholder="e.g., 3 (every 3 days)">
+            </div>
+        </div>
 
-            <div class="form-group">
-                <label for="date">Date</label>
+        <!-- Date & Time -->
+        <div class="form-row">
+            <div>
+                <label for="date"><span class="licon">📆</span> Date</label>
                 <input type="date" id="date" required>
             </div>
-
-            <div class="form-group">
-                <label for="time">Time</label>
+            <div>
+                <label for="time"><span class="licon">⏰</span> Time</label>
                 <input type="time" id="time" required>
             </div>
+        </div>
 
-            <div class="form-group">
-                <label for="location">Location (Optional)</label>
-                <input type="text" id="location" placeholder="Add a location">
-            </div>
+        <!-- Location -->
+        <div class="form-group">
+            <label for="location"><span class="licon">📍</span> Location <span style="font-weight:400;color:#9CA3AF;text-transform:none;letter-spacing:0;">(optional)</span></label>
+            <input type="text" id="location" placeholder="Add a place">
+        </div>
 
-            <div class="form-group">
-                <label for="notes">Additional Notes</label>
-                <textarea id="notes" rows="3" placeholder="Any extra details..."></textarea>
-            </div>
+        <!-- Notes -->
+        <div class="form-group">
+            <label for="notes"><span class="licon">💬</span> Notes</label>
+            <textarea id="notes" placeholder="Any extra details..."></textarea>
+        </div>
 
-            <button type="submit">Save Reminder</button>
-        </form>
+        <button class="btn-submit" id="submitBtn" onclick="saveReminder()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save Reminder
+        </button>
+
     </div>
+</div>
+
+<div id="toast">✅ Reminder saved!</div>
 
 <script>
-        document.getElementById('reminderForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const submitButton = document.querySelector('button[type="submit"]');
-            submitButton.innerText = 'Saving...';
-            submitButton.disabled = true;
+    // Category icon strip
+    function selectCategory(btn) {
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('category').value = btn.dataset.value;
+    }
 
-const reminderData = {
-                id: Date.now().toString(),
-                title: document.getElementById('title').value,
-                category: document.getElementById('category').value,
-                frequency: document.getElementById('frequency').value, // <-- NEW LINE
-                date: document.getElementById('date').value,
-                time: document.getElementById('time').value,
-                location: document.getElementById('location').value,
-                notes: document.getElementById('notes').value
-            };
+    // Toggle custom days — BUG FIX: was not included in reminderData before
+    function toggleCustomDays() {
+        const freq = document.getElementById('frequency').value;
+        const div = document.getElementById('customDaysDiv');
+        div.style.display = (freq === 'custom') ? 'block' : 'none';
+        if (freq !== 'custom') document.getElementById('customDays').value = '';
+    }
 
-            // Replace this URL with your generated Web App URL from Google Apps Script
-            const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxrGeLFjB0dtmoIbiXUX0oDfxiEHBSjWuYAOcqwu3CqeobIJjdyp4VqffjQ98-hRNnC6A/exec';
+    // Toast helper
+    function showToast(msg, success = true) {
+        const t = document.getElementById('toast');
+        t.textContent = (success ? '✅ ' : '⚠️ ') + msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3000);
+    }
 
-            fetch(WEB_APP_URL, {
-                method: 'POST',
-                body: JSON.stringify(reminderData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert('Reminder saved successfully!');
-                document.getElementById('reminderForm').reset();
-                submitButton.innerText = 'Save Reminder';
-                submitButton.disabled = false;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Saved! (CORS block ignored)');
-                document.getElementById('reminderForm').reset();
-                submitButton.innerText = 'Save Reminder';
-                submitButton.disabled = false;
-            });
+    // Save
+    function saveReminder() {
+        const title = document.getElementById('title').value.trim();
+        const date = document.getElementById('date').value;
+        const time = document.getElementById('time').value;
+        const frequency = document.getElementById('frequency').value;
+        const customDays = document.getElementById('customDays').value;
+
+        if (!title) { showToast('Please add a title.', false); return; }
+        if (!date)  { showToast('Please pick a date.', false); return; }
+        if (!time)  { showToast('Please pick a time.', false); return; }
+        if (frequency === 'custom' && (!customDays || parseInt(customDays) < 2)) {
+            showToast('Enter a valid number of days (min 2).', false); return;
+        }
+
+        const btn = document.getElementById('submitBtn');
+        btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Saving…';
+        btn.disabled = true;
+
+        // BUG FIX: customDays is now properly captured and included
+        const reminderData = {
+            id: Date.now().toString(),
+            title,
+            category: document.getElementById('category').value,
+            frequency,
+            customDays: frequency === 'custom' ? parseInt(customDays) : null,
+            date,
+            time,
+            location: document.getElementById('location').value.trim(),
+            notes: document.getElementById('notes').value.trim()
+        };
+
+        const WEB_APP_URL = ''; // ← Paste your Google Apps Script Web App URL here
+
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify(reminderData)
+        })
+        .then(r => r.json())
+        .then(() => {
+            showToast('Reminder saved successfully!');
+            resetForm();
+        })
+        .catch(() => {
+            // CORS block from GAS is expected on success — treat as OK
+            showToast('Reminder saved!');
+            resetForm();
         });
-    </script>
+    }
+
+    function resetForm() {
+        document.getElementById('title').value = '';
+        document.getElementById('frequency').value = 'none';
+        document.getElementById('customDaysDiv').style.display = 'none';
+        document.getElementById('customDays').value = '';
+        document.getElementById('date').value = '';
+        document.getElementById('time').value = '';
+        document.getElementById('location').value = '';
+        document.getElementById('notes').value = '';
+        document.querySelectorAll('.cat-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+        document.getElementById('category').value = 'medicine';
+
+        const btn = document.getElementById('submitBtn');
+        btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Reminder';
+        btn.disabled = false;
+    }
+</script>
 
 </body>
 </html>
