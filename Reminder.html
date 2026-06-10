@@ -68,6 +68,16 @@
                     <option value="note">General Note</option>
                 </select>
             </div>
+			
+			<div class="form-group">
+                <label for="frequency">Frequency</label>
+                <select id="frequency">
+                    <option value="once">One time only</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                </select>
+            </div>
 
             <div class="form-group">
                 <label for="date">Date</label>
@@ -101,10 +111,11 @@
             submitButton.innerText = 'Saving...';
             submitButton.disabled = true;
 
-            const reminderData = {
+const reminderData = {
                 id: Date.now().toString(),
                 title: document.getElementById('title').value,
                 category: document.getElementById('category').value,
+                frequency: document.getElementById('frequency').value, // <-- NEW LINE
                 date: document.getElementById('date').value,
                 time: document.getElementById('time').value,
                 location: document.getElementById('location').value,
