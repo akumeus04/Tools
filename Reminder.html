@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Reminder App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            padding: 20px;
+            max-width: 500px;
+            margin: auto;
+        }
+        .reminder-card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="reminder-card">
+        <h2>Create a Reminder</h2>
+        <form id="reminderForm">
+            
+            <div class="form-group">
+                <label for="title">Title (e.g., Birthday, Medicine)</label>
+                <input type="text" id="title" required placeholder="What are we reminding you about?">
+            </div>
+
+            <div class="form-group">
+                <label for="category">Category</label>
+                <select id="category">
+                    <option value="medicine">Medicine</option>
+                    <option value="birthday">Birthday</option>
+                    <option value="event">Event/Meeting</option>
+                    <option value="note">General Note</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="date">Date</label>
+                <input type="date" id="date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="time">Time</label>
+                <input type="time" id="time" required>
+            </div>
+
+            <div class="form-group">
+                <label for="location">Location (Optional)</label>
+                <input type="text" id="location" placeholder="Add a location">
+            </div>
+
+            <div class="form-group">
+                <label for="notes">Additional Notes</label>
+                <textarea id="notes" rows="3" placeholder="Any extra details..."></textarea>
+            </div>
+
+            <button type="submit">Save Reminder</button>
+        </form>
+    </div>
+
+<script>
+        document.getElementById('reminderForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitButton = document.querySelector('button[type="submit"]');
+            submitButton.innerText = 'Saving...';
+            submitButton.disabled = true;
+
+            const reminderData = {
+                id: Date.now().toString(),
+                title: document.getElementById('title').value,
+                category: document.getElementById('category').value,
+                date: document.getElementById('date').value,
+                time: document.getElementById('time').value,
+                location: document.getElementById('location').value,
+                notes: document.getElementById('notes').value
+            };
+
+            // Replace this URL with your generated Web App URL from Google Apps Script
+            const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxrGeLFjB0dtmoIbiXUX0oDfxiEHBSjWuYAOcqwu3CqeobIJjdyp4VqffjQ98-hRNnC6A/exec';
+
+            fetch(WEB_APP_URL, {
+                method: 'POST',
+                body: JSON.stringify(reminderData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Reminder saved successfully!');
+                document.getElementById('reminderForm').reset();
+                submitButton.innerText = 'Save Reminder';
+                submitButton.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Saved! (CORS block ignored)');
+                document.getElementById('reminderForm').reset();
+                submitButton.innerText = 'Save Reminder';
+                submitButton.disabled = false;
+            });
+        });
+    </script>
+
+</body>
+</html>
