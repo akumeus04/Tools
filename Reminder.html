@@ -399,9 +399,13 @@ let viewingId    = null;
 //  INIT
 // ══════════════════════════════════════════
 function init() {
-    // Start with localStorage cache for instant display
+    // 1. Instantly load local data so the screen doesn't look empty
     reminders = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    renderList();
     updateBadge();
+
+    // 2. Fetch the true data from Google Sheets
+    loadFromCloud();
 }
 
 // ══════════════════════════════════════════
@@ -431,9 +435,11 @@ function loadFromCloud() {
 
     fetch(`${WEB_APP_URL}?action=getAll`)
         .then(r => r.json())
-        .then(data => {
+.then(data => {
             if (data.status === 'success') {
-                reminders = data.reminders;
+                // 👇 FIX: Safely grab the array whether GAS named it 'reminders' or 'data'
+                reminders = data.reminders || data.data || []; 
+                
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
                 updateBadge();
                 setCloudStatus('ok', `✅ ${reminders.length} reminder${reminders.length !== 1 ? 's' : ''} loaded from Google Sheets`);
@@ -715,56 +721,77 @@ function openEdit(id) {
 }
 
 // ══════════════════════════════════════════
-//  SHARED UI HELPERS
+//  CATEGORY & FORM HELPERS
 // ══════════════════════════════════════════
 function selectCategory(btn, selectId) {
-    // Find parent category-strip and deactivate siblings
-    btn.closest('.category-strip').querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    const panel = btn.closest('.card') || btn.closest('.modal');
+    panel.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById(selectId).value = btn.dataset.value;
 }
 
 function toggleCustomDays(divId, inputId, selectId) {
-    const freq = document.getElementById(selectId).value;
-    document.getElementById(divId).style.display = freq === 'custom' ? 'block' : 'none';
-    if (freq !== 'custom') document.getElementById(inputId).value = '';
+    const isCustom = document.getElementById(selectId).value === 'custom';
+    document.getElementById(divId).style.display = isCustom ? 'block' : 'none';
+}
+
+function updateBadge() {
+    document.getElementById('reminderCount').textContent = reminders.length;
 }
 
 function resetForm() {
-    ['title','date','time','location','notes'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('title').value    = '';
+    document.getElementById('date').value     = '';
+    document.getElementById('time').value     = '';
+    document.getElementById('location').value = '';
+    document.getElementById('notes').value    = '';
     document.getElementById('frequency').value = 'none';
-    document.getElementById('customDaysDiv').style.display = 'none';
     document.getElementById('customDays').value = '';
-    document.querySelectorAll('#createPanel .cat-btn').forEach((b,i) => b.classList.toggle('active', i===0));
-    document.getElementById('category').value = 'medicine';
+    document.getElementById('customDaysDiv').style.display = 'none';
+    const firstCat = document.querySelector('#createPanel .cat-btn');
+    if (firstCat) selectCategory(firstCat, 'category');
 }
 
-function updateBadge() { document.getElementById('reminderCount').textContent = reminders.length; }
-
-function showToast(msg, success = true) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3500);
-}
-
+// ══════════════════════════════════════════
+//  MODAL & TOAST
+// ══════════════════════════════════════════
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
-});
+function showToast(msg, isSuccess = true) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ══════════════════════════════════════════
+//  TEXT FORMATTERS
+// ══════════════════════════════════════════
+function formatTime(timeStr) {
+    if (!timeStr) return '';
+    const [h, m] = timeStr.split(':');
+    const d = new Date();
+    d.setHours(h, m);
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
 
 function escHtml(str) {
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function formatTime(t) {
-    if (!t) return '';
-    const [h,m] = t.split(':'); const hr = parseInt(h);
-    return `${hr%12||12}:${m} ${hr>=12?'PM':'AM'}`;
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
 }
 
-init();
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+    init();
+    const createCat = document.querySelector('#createPanel .cat-btn');
+    if (createCat) document.getElementById('category').value = createCat.dataset.value;
+});
+
 </script>
 </body>
 </html>
