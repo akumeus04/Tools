@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Roadtrip to Davao</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDaa_pfV7Otoq7TDWVJUVtWvtHJ3hPguP4&libraries=places&callback=initMap" async defer></script>
+
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --card: #22263a;
+      --accent: #00d4aa;
+      --accent-dim: #00a882;
+      --danger: #ff5c5c;
+      --gold: #f5c842;
+      --text: #e8eaf0;
+      --muted: #6b7280;
+      --border: #2e3347;
+      --map-h: 52vh;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── LOGIN ─────────────────────────────────── */
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: radial-gradient(ellipse at top, #0d2e24 0%, #0f1117 60%);
+    }
+    .login-logo {
+      font-size: 48px;
+      margin-bottom: 8px;
+    }
+    .login-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+    .login-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 360px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+    }
+    .login-card input {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      margin-bottom: 12px;
+      transition: border-color 0.2s;
+    }
+    .login-card input:focus { border-color: var(--accent); }
+    .btn-login {
+      width: 100%;
+      padding: 15px;
+      background: var(--accent);
+      color: #0f1117;
+      font-weight: 700;
+      font-size: 16px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-login:active { transform: scale(0.98); }
+
+    /* ─── APP ────────────────────────────────────── */
+    #app-screen { display: none; flex-direction: column; min-height: 100vh; }
+
+    /* TOP NAV BAR - thin, driving-friendly */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      height: 52px;
+    }
+    .topbar-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--text);
+    }
+    .topbar-title span { color: var(--accent); }
+    .btn-logout {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    /* MAP - big, driving-centric */
+    #map {
+      width: 100%;
+      height: var(--map-h);
+      display: block;
+    }
+
+    /* NAV INFO STRIP under map */
+    .nav-strip {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: none;
+      gap: 12px;
+    }
+    .nav-strip.visible { display: flex; }
+    .nav-dest {
+      flex: 1;
+      min-width: 0;
+    }
+    .nav-dest-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--accent);
+      margin-bottom: 2px;
+    }
+    .nav-dest-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .nav-stats {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .nav-stat {
+      text-align: right;
+    }
+    .nav-stat-val {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--gold);
+      line-height: 1;
+    }
+    .nav-stat-label {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* TABS */
+    .tab-bar {
+      display: flex;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 52px;
+      z-index: 90;
+    }
+    .tab {
+      flex: 1;
+      padding: 12px 4px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      letter-spacing: 0.3px;
+    }
+    .tab i { display: block; font-size: 18px; margin-bottom: 3px; }
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* TAB PANELS */
+    .tab-panel { display: none; padding-bottom: 100px; }
+    .tab-panel.active { display: block; }
+
+    /* ─── EXPENSES PANEL ─────────────────────────── */
+    .expense-summary {
+      margin: 14px 14px 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .expense-summary-header {
+      background: linear-gradient(135deg, #003d30, #00251e);
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .exp-label { font-size: 11px; color: #80cfc0; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
+    .exp-total { font-size: 28px; font-weight: 800; color: var(--accent); letter-spacing: -1px; }
+    .expense-rows {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-top: 1px solid var(--border);
+    }
+    .expense-cell {
+      padding: 12px 16px;
+      border-right: 1px solid var(--border);
+    }
+    .expense-cell:last-child { border-right: none; }
+    .expense-cell-label { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+    .expense-cell-val { font-size: 16px; font-weight: 700; color: var(--text); }
+    .expense-cell-val.green { color: var(--accent); }
+    .expense-cell-val.gold { color: var(--gold); }
+
+    /* Waypoint list */
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 14px 8px;
+    }
+    .section-head h2 { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
+
+    #itinerary-list { padding: 0 14px; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+
+    .waypoint-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .waypoint-top {
+      display: flex;
+      align-items: center;
+      padding: 12px 14px;
+      gap: 12px;
+    }
+    .waypoint-nav-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: var(--accent);
+      border: none;
+      color: #0f1117;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .waypoint-nav-btn:active { background: var(--accent-dim); }
+    .waypoint-info { flex: 1; min-width: 0; }
+    .waypoint-name { font-size: 15px; font-weight: 700; color: var(--text); }
+    .waypoint-addr { font-size: 12px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .waypoint-expense { font-size: 16px; font-weight: 800; color: var(--accent); }
+
+    .waypoint-actions {
+      display: flex;
+      border-top: 1px solid var(--border);
+    }
+    .waypoint-action-btn {
+      flex: 1;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .waypoint-action-btn:first-child { border-right: 1px solid var(--border); }
+    .waypoint-action-btn.edit { color: #60a5fa; }
+    .waypoint-action-btn.edit:active { background: #1e2a3a; }
+    .waypoint-action-btn.del { color: var(--danger); }
+    .waypoint-action-btn.del:active { background: #2a1a1a; }
+
+    /* Inline expense editor */
+    .expense-editor {
+      display: none;
+      padding: 12px 14px;
+      background: #1c1f30;
+      border-top: 1px solid var(--border);
+      gap: 8px;
+      align-items: center;
+    }
+    .expense-editor.open { display: flex; }
+    .expense-editor input {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+    }
+    .expense-editor input::placeholder { color: var(--muted); font-weight: 400; }
+    .expense-save-btn {
+      padding: 10px 18px;
+      background: var(--accent);
+      color: #0f1117;
+      font-weight: 700;
+      font-size: 14px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .expense-cancel-btn {
+      padding: 10px 14px;
+      background: var(--card);
+      color: var(--muted);
+      font-size: 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--muted);
+    }
+    .empty-state i { font-size: 40px; display: block; margin-bottom: 12px; opacity: 0.4; }
+    .empty-state p { font-size: 14px; }
+
+    /* ─── ITINERARY PANEL ────────────────────────── */
+    .day-card {
+      margin: 14px 14px 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .day-header {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      gap: 12px;
+      cursor: pointer;
+    }
+    .day-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: #0f1117;
+      flex-shrink: 0;
+      letter-spacing: -0.5px;
+    }
+    .day-title-wrap { flex: 1; }
+    .day-title { font-size: 14px; font-weight: 700; color: var(--text); }
+    .day-range { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .day-chevron { color: var(--muted); font-size: 18px; transition: transform 0.2s; }
+    .day-card.open .day-chevron { transform: rotate(180deg); }
+
+    .day-body { display: none; padding: 0 16px 16px; }
+    .day-card.open .day-body { display: block; }
+
+    .timeline { list-style: none; padding: 0; }
+    .tl-item {
+      display: flex;
+      gap: 12px;
+      padding: 8px 0;
+      position: relative;
+    }
+    .tl-item:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      left: 32px;
+      top: 30px;
+      bottom: -8px;
+      width: 1px;
+      background: var(--border);
+    }
+    .tl-time {
+      width: 52px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+      padding-top: 2px;
+      text-align: right;
+    }
+    .tl-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+      margin-top: 5px;
+      position: relative;
+      z-index: 1;
+    }
+    .tl-text {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.4;
+      flex: 1;
+    }
+
+    .cost-pill {
+      background: #1c2a24;
+      border: 1px solid #2e4a3a;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-top: 10px;
+    }
+    .cost-pill-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: #80cfc0; margin-bottom: 6px; }
+    .cost-row { font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+    .cost-total { font-size: 13px; font-weight: 700; color: var(--danger); margin-top: 6px; }
+
+    /* ─── MODAL (add waypoint) ───────────────────── */
+    #modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 200;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    #modal.open { display: flex; }
+    .modal-sheet {
+      width: 100%;
+      max-width: 480px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px 24px 0 0;
+      padding: 24px;
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+    }
+    .modal-handle {
+      width: 40px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 0 auto 20px;
+    }
+    .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 20px; }
+    .modal-label { font-size: 12px; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+    .modal-input {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 13px 16px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      margin-bottom: 14px;
+      transition: border-color 0.2s;
+    }
+    .modal-input:focus { border-color: var(--accent); }
+    .modal-btns { display: flex; gap: 10px; margin-top: 4px; }
+    .btn-save {
+      flex: 1;
+      padding: 15px;
+      background: var(--accent);
+      color: #0f1117;
+      font-weight: 700;
+      font-size: 15px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    .btn-cancel {
+      padding: 15px 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    /* FAB */
+    #fab {
+      position: fixed;
+      bottom: 24px;
+      right: 20px;
+      z-index: 150;
+      width: 58px;
+      height: 58px;
+      border-radius: 18px;
+      background: var(--accent);
+      border: none;
+      color: #0f1117;
+      font-size: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(0, 212, 170, 0.35);
+      transition: transform 0.15s;
+    }
+    #fab:active { transform: scale(0.93); }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- ─── LOGIN ─────────────────────────────────── -->
+<div id="login-screen">
+  <div class="login-logo">🚗</div>
+  <div class="login-title">Roadtrip Tracker</div>
+  <div class="login-sub">Bacolod → Davao, 3 days</div>
+  <div class="login-card">
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button class="btn-login" id="login-btn">Sign In</button>
+  </div>
+</div>
+
+<!-- ─── APP ────────────────────────────────────── -->
+<div id="app-screen">
+
+  <div class="topbar">
+    <div class="topbar-title">
+      🚗 <span>Davao</span> Roadtrip
+    </div>
+    <button class="btn-logout" id="logout-btn">Sign Out</button>
+  </div>
+
+  <!-- MAP - big for driving -->
+  <div id="map"></div>
+
+  <!-- NAV strip shows when destination selected -->
+  <div class="nav-strip" id="nav-strip">
+    <div class="nav-dest">
+      <div class="nav-dest-label">Next Stop</div>
+      <div class="nav-dest-name" id="next-stop-name">—</div>
+    </div>
+    <div class="nav-stats">
+      <div class="nav-stat">
+        <div class="nav-stat-val" id="travel-duration">—</div>
+        <div class="nav-stat-label">Time</div>
+      </div>
+      <div class="nav-stat">
+        <div class="nav-stat-val" id="travel-distance">—</div>
+        <div class="nav-stat-label">Dist</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-bar">
+    <div class="tab active" data-tab="expenses">
+      <i class="bi bi-wallet2"></i>Expenses
+    </div>
+    <div class="tab" data-tab="itinerary">
+      <i class="bi bi-map"></i>Itinerary
+    </div>
+  </div>
+
+  <!-- EXPENSES PANEL -->
+  <div class="tab-panel active" id="panel-expenses">
+    <div class="expense-summary">
+      <div class="expense-summary-header">
+        <div>
+          <div class="exp-label">Live Extra Expenses</div>
+          <div class="exp-total" id="total-expenses">₱0.00</div>
+        </div>
+        <i class="bi bi-lightning-fill" style="font-size:32px; color: var(--accent); opacity:0.4;"></i>
+      </div>
+      <div class="expense-rows">
+        <div class="expense-cell">
+          <div class="expense-cell-label">Base Estimate</div>
+          <div class="expense-cell-val">₱17,878</div>
+        </div>
+        <div class="expense-cell">
+          <div class="expense-cell-label">Grand Total</div>
+          <div class="expense-cell-val gold" id="dynamic-grand-total">₱17,878.00</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <h2>Waypoints & Stops</h2>
+    </div>
+
+    <ul id="itinerary-list">
+      <li class="empty-state">
+        <i class="bi bi-geo-alt"></i>
+        <p>No waypoints yet.<br>Tap + to add your first stop.</p>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ITINERARY PANEL -->
+  <div class="tab-panel" id="panel-itinerary">
+
+    <!-- Day 1 -->
+    <div class="day-card open" id="day1">
+      <div class="day-header" onclick="toggleDay('day1')">
+        <div class="day-badge">D1</div>
+        <div class="day-title-wrap">
+          <div class="day-title">Negros → Zamboanga del Norte</div>
+          <div class="day-range">Bacolod → Dipolog · ~500 km</div>
+        </div>
+        <i class="bi bi-chevron-down day-chevron"></i>
+      </div>
+      <div class="day-body">
+        <ul class="timeline">
+          <li class="tl-item"><div class="tl-time">6:00 AM</div><div class="tl-dot"></div><div class="tl-text">Depart Paglaum Village, Bacolod City</div></li>
+          <li class="tl-item"><div class="tl-time">9:30 AM</div><div class="tl-dot"></div><div class="tl-text">Arrive Dumaguete City Port</div></li>
+          <li class="tl-item"><div class="tl-time">9:30–<br>11:30</div><div class="tl-dot"></div><div class="tl-text">Secure RoRo tickets & early lunch</div></li>
+          <li class="tl-item"><div class="tl-time">12:00 PM</div><div class="tl-dot"></div><div class="tl-text">Board FastCat or Montenegro RoRo</div></li>
+          <li class="tl-item"><div class="tl-time">4–5 PM</div><div class="tl-dot"></div><div class="tl-text">Arrive Dapitan City Port</div></li>
+          <li class="tl-item"><div class="tl-time">Night</div><div class="tl-dot"></div><div class="tl-text">Overnight — Dipolog City (Ariana Hotel or D' Hotel & Suites)</div></li>
+        </ul>
+        <div class="cost-pill">
+          <div class="cost-pill-label">💰 Est. Expenses</div>
+          <div class="cost-row">Fuel (15.5 L / 233 km): ₱1,252</div>
+          <div class="cost-row">RoRo Freight: ₱3,890 – ₱5,280</div>
+          <div class="cost-row">Passenger Fares (3 pax): ₱2,100</div>
+          <div class="cost-row">Food: ₱1,200 – ₱1,500</div>
+          <div class="cost-row">Hotel: ₱2,000 – ₱4,000</div>
+          <div class="cost-total">Day 1 Total: ₱10,442 – ₱14,132</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day 2 -->
+    <div class="day-card" id="day2">
+      <div class="day-header" onclick="toggleDay('day2')">
+        <div class="day-badge">D2</div>
+        <div class="day-title-wrap">
+          <div class="day-title">Northern Mindanao Coastal Drive</div>
+          <div class="day-range">Dipolog → CDO · ~290 km</div>
+        </div>
+        <i class="bi bi-chevron-down day-chevron"></i>
+      </div>
+      <div class="day-body">
+        <ul class="timeline">
+          <li class="tl-item"><div class="tl-time">8:00 AM</div><div class="tl-dot"></div><div class="tl-text">Breakfast in Dipolog, hit the road</div></li>
+          <li class="tl-item"><div class="tl-time">11:00 AM</div><div class="tl-dot"></div><div class="tl-text">Early lunch stop — Iligan City area</div></li>
+          <li class="tl-item"><div class="tl-time">1:00 PM</div><div class="tl-dot"></div><div class="tl-text">Arrive Cagayan de Oro City (CDO)</div></li>
+          <li class="tl-item"><div class="tl-time">Night</div><div class="tl-dot"></div><div class="tl-text">Overnight — Limketkai Luxe Hotel or Mallberry Suites</div></li>
+        </ul>
+        <div class="cost-pill">
+          <div class="cost-pill-label">💰 Est. Expenses</div>
+          <div class="cost-row">Fuel (19.3 L / 290 km): ₱1,560</div>
+          <div class="cost-row">Food: ₱1,200 – ₱1,500</div>
+          <div class="cost-row">Hotel: ₱2,000 – ₱4,000</div>
+          <div class="cost-total">Day 2 Total: ₱4,760 – ₱7,060</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day 3 -->
+    <div class="day-card" id="day3">
+      <div class="day-header" onclick="toggleDay('day3')">
+        <div class="day-badge">D3</div>
+        <div class="day-title-wrap">
+          <div class="day-title">BUDA Mountain Pass → Davao</div>
+          <div class="day-range">CDO → Davao City · ~293 km</div>
+        </div>
+        <i class="bi bi-chevron-down day-chevron"></i>
+      </div>
+      <div class="day-body">
+        <ul class="timeline">
+          <li class="tl-item"><div class="tl-time">7:00 AM</div><div class="tl-dot"></div><div class="tl-text">Depart CDO heading south toward Bukidnon</div></li>
+          <li class="tl-item"><div class="tl-time">10:30 AM</div><div class="tl-dot"></div><div class="tl-text">Coffee / lunch break — Marilog District</div></li>
+          <li class="tl-item"><div class="tl-time">12:30 PM</div><div class="tl-dot"></div><div class="tl-text">🎉 Arrive — Bunawan, Davao City</div></li>
+        </ul>
+        <div class="cost-pill">
+          <div class="cost-pill-label">💰 Est. Expenses</div>
+          <div class="cost-row">Fuel (19.5 L / 293 km): ₱1,576</div>
+          <div class="cost-row">Food: ₱1,100 – ₱1,500</div>
+          <div class="cost-total">Day 3 Total: ₱2,676 – ₱3,076</div>
+        </div>
+      </div>
+    </div>
+    <div style="height: 14px;"></div>
+  </div><!-- end panel-itinerary -->
+
+</div><!-- end app-screen -->
+
+<!-- FAB -->
+<button id="fab" onclick="window.openModal()"><i class="bi bi-plus"></i></button>
+
+<!-- MODAL -->
+<div id="modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title">Add Waypoint</div>
+    <input type="hidden" id="edit-id">
+
+    <div class="modal-label">Destination Name</div>
+    <input type="text" id="dest-name" class="modal-input" placeholder="e.g. Caltex Station Iligan">
+
+    <div class="modal-label">Address / Landmark (for Maps)</div>
+    <input type="text" id="dest-address" class="modal-input" placeholder="e.g. Iligan City, Lanao del Norte">
+
+    <div class="modal-label">Actual Expense (₱)</div>
+    <input type="number" id="dest-expense" class="modal-input" placeholder="0.00">
+
+    <div class="modal-btns">
+      <button class="btn-save" onclick="window.saveDestination()">Save</button>
+      <button class="btn-cancel" onclick="window.closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SCRIPTS ────────────────────────────────── -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getDatabase, ref, onValue, push, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAc46X6MIXI-moZ2oTy2ShiDv6IrjhVQC4",
+      authDomain: "finance-app-23309.firebaseapp.com",
+      databaseURL: "https://finance-app-23309-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "finance-app-23309",
+      storageBucket: "finance-app-23309.firebasestorage.app",
+      messagingSenderId: "268979076437",
+      appId: "1:268979076437:web:204abafc00e7558f4e83dc"
+    };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+  const auth = getAuth(app);
+
+  const loginScreen = document.getElementById('login-screen');
+  const appScreen   = document.getElementById('app-screen');
+  const itineraryList = document.getElementById('itinerary-list');
+  const totalExpensesEl = document.getElementById('total-expenses');
+  const dynamicGrandTotalEl = document.getElementById('dynamic-grand-total');
+  const modal = document.getElementById('modal');
+  const baseEstimatedCost = 17878;
+
+  document.getElementById('login-btn').addEventListener('click', () => {
+    signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value)
+      .catch(err => alert(err.message));
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      loginScreen.style.display = 'none';
+      appScreen.style.display = 'flex';
+      loadData();
+    } else {
+      loginScreen.style.display = 'flex';
+      appScreen.style.display = 'none';
+    }
+  });
+
+  function loadData() {
+    onValue(ref(db, 'itinerary'), (snapshot) => {
+      itineraryList.innerHTML = '';
+      let totalExpense = 0;
+      let hasItems = false;
+
+      snapshot.forEach((child) => {
+        const data = child.val();
+        const id = child.key;
+        totalExpense += parseFloat(data.expense || 0);
+        hasItems = true;
+
+        const li = document.createElement('li');
+        li.className = 'waypoint-card';
+        li.innerHTML = `
+          <div class="waypoint-top">
+            <button class="waypoint-nav-btn" onclick="window.setNextDestination('${esc(data.address)}','${esc(data.name)}')" title="Navigate">
+              <i class="bi bi-send-fill"></i>
+            </button>
+            <div class="waypoint-info">
+              <div class="waypoint-name">${data.name}</div>
+              <div class="waypoint-addr">${data.address}</div>
+            </div>
+            <div class="waypoint-expense">₱${parseFloat(data.expense || 0).toFixed(2)}</div>
+          </div>
+          <div class="expense-editor" id="editor-${id}">
+            <input type="number" id="inline-exp-${id}" value="${data.expense || 0}" placeholder="Enter amount">
+            <button class="expense-save-btn" onclick="window.saveInlineExpense('${id}', '${esc(data.name)}', '${esc(data.address)}')">Save</button>
+            <button class="expense-cancel-btn" onclick="window.closeEditor('${id}')">✕</button>
+          </div>
+          <div class="waypoint-actions">
+            <button class="waypoint-action-btn edit" onclick="window.openEditor('${id}')">
+              <i class="bi bi-pencil"></i> Edit Expense
+            </button>
+            <button class="waypoint-action-btn del" onclick="window.deleteItem('${id}')">
+              <i class="bi bi-trash"></i> Delete
+            </button>
+          </div>
+        `;
+        itineraryList.appendChild(li);
+      });
+
+      if (!hasItems) {
+        itineraryList.innerHTML = `
+          <li class="empty-state">
+            <i class="bi bi-geo-alt"></i>
+            <p>No waypoints yet.<br>Tap + to add your first stop.</p>
+          </li>`;
+      }
+
+      totalExpensesEl.innerText = `₱${totalExpense.toFixed(2)}`;
+      dynamicGrandTotalEl.innerText = `₱${(baseEstimatedCost + totalExpense).toFixed(2)}`;
+    });
+  }
+
+  function esc(str) {
+    return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  }
+
+  window.openEditor = (id) => {
+    document.querySelectorAll('.expense-editor.open').forEach(el => el.classList.remove('open'));
+    document.getElementById('editor-' + id).classList.add('open');
+    document.getElementById('inline-exp-' + id).focus();
+  };
+
+  window.closeEditor = (id) => {
+    document.getElementById('editor-' + id).classList.remove('open');
+  };
+
+  window.saveInlineExpense = (id, name, address) => {
+    const val = parseFloat(document.getElementById('inline-exp-' + id).value) || 0;
+    update(ref(db, 'itinerary/' + id), { name, address, expense: val, timestamp: Date.now() });
+    window.closeEditor(id);
+  };
+
+  window.saveDestination = () => {
+    const id = document.getElementById('edit-id').value;
+    const payload = {
+      name: document.getElementById('dest-name').value,
+      address: document.getElementById('dest-address').value,
+      expense: parseFloat(document.getElementById('dest-expense').value) || 0,
+      timestamp: Date.now()
+    };
+    if (id) update(ref(db, 'itinerary/' + id), payload);
+    else push(ref(db, 'itinerary'), payload);
+    window.closeModal();
+  };
+
+  window.deleteItem = (key) => {
+    if (confirm('Delete this waypoint?')) remove(ref(db, 'itinerary/' + key));
+  };
+
+  window.openModal = () => {
+    document.getElementById('edit-id').value = '';
+    document.getElementById('dest-name').value = '';
+    document.getElementById('dest-address').value = '';
+    document.getElementById('dest-expense').value = '';
+    document.getElementById('modal-title').innerText = 'Add Waypoint';
+    modal.classList.add('open');
+  };
+
+  window.closeModal = () => modal.classList.remove('open');
+
+  // Close modal on backdrop click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) window.closeModal();
+  });
+</script>
+
+<script>
+  // Tab switching
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  // Day accordion
+  window.toggleDay = function(id) {
+    document.getElementById(id).classList.toggle('open');
+  };
+
+  // Google Maps
+  let map, directionsService, directionsRenderer, userMarker;
+
+  window.initMap = function() {
+    directionsService  = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer({
+      suppressMarkers: false,
+      polylineOptions: { strokeColor: "#00d4aa", strokeWeight: 6 }
+    });
+
+    map = new google.maps.Map(document.getElementById("map"), {
+      zoom: 13,
+      center: { lat: 10.6765, lng: 122.9509 },
+      disableDefaultUI: false,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: true,
+      zoomControl: true,
+      styles: [
+        { elementType: "geometry", stylers: [{ color: "#1a1d27" }] },
+        { elementType: "labels.text.stroke", stylers: [{ color: "#1a1d27" }] },
+        { elementType: "labels.text.fill",   stylers: [{ color: "#7c8399" }] },
+        { featureType: "road",              elementType: "geometry",       stylers: [{ color: "#2e3347" }] },
+        { featureType: "road",              elementType: "geometry.stroke",stylers: [{ color: "#0f1117" }] },
+        { featureType: "road.highway",      elementType: "geometry",       stylers: [{ color: "#3d4459" }] },
+        { featureType: "road.highway",      elementType: "labels.text.fill",stylers: [{ color: "#f5c842" }] },
+        { featureType: "water",             elementType: "geometry",       stylers: [{ color: "#0d1a2e" }] },
+        { featureType: "poi",               elementType: "labels",         stylers: [{ visibility: "off" }] },
+        { featureType: "transit",           elementType: "labels",         stylers: [{ visibility: "off" }] }
+      ]
+    });
+
+    directionsRenderer.setMap(map);
+    trackUserLocation();
+  };
+
+  function trackUserLocation() {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.watchPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        if (!userMarker) {
+          userMarker = new google.maps.Marker({
+            position: loc, map,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 9, fillColor: "#00d4aa", fillOpacity: 1,
+              strokeColor: "#0f1117", strokeWeight: 3
+            }
+          });
+          map.setCenter(loc);
+        } else {
+          userMarker.setPosition(loc);
+        }
+        window.currentUserLocation = loc;
+        if (window.currentDestination) calcRoute();
+      },
+      err => console.warn("Geolocation:", err),
+      { enableHighAccuracy: true }
+    );
+  }
+
+  window.setNextDestination = function(address, name) {
+    window.currentDestination = address;
+    document.getElementById('nav-strip').classList.add('visible');
+    document.getElementById('next-stop-name').innerText = name;
+    if (window.currentUserLocation) calcRoute();
+
+    // Switch to expenses tab and scroll map into view
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector('[data-tab="expenses"]').classList.add('active');
+    document.getElementById('panel-expenses').classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  function calcRoute() {
+    if (!window.currentUserLocation || !window.currentDestination) return;
+    directionsService.route({
+      origin: window.currentUserLocation,
+      destination: window.currentDestination,
+      travelMode: google.maps.TravelMode.DRIVING
+    }, (response, status) => {
+      if (status === "OK") {
+        directionsRenderer.setDirections(response);
+        const leg = response.routes[0].legs[0];
+        document.getElementById('travel-duration').innerText = leg.duration.text;
+        document.getElementById('travel-distance').innerText = leg.distance.text;
+      } else {
+        document.getElementById('travel-duration').innerText = "—";
+        document.getElementById('travel-distance').innerText = "API Error";
+      }
+    });
+  }
+</script>
+</body>
+</html>
