@@ -552,6 +552,70 @@
     #fab:active { transform: scale(0.93); }
 
     .hidden { display: none !important; }
+
+    /* ─── Google Places Autocomplete dropdown fix ── */
+    /* Must appear above the modal overlay (z-index 200) */
+    .pac-container {
+      z-index: 9999 !important;
+      background: #1a1d27;
+      border: 1px solid #2e3347;
+      border-radius: 12px;
+      margin-top: 4px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+    }
+    .pac-item {
+      padding: 10px 14px;
+      color: #e8eaf0;
+      border-top: 1px solid #2e3347;
+      cursor: pointer;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .pac-item:first-child { border-top: none; }
+    .pac-item:hover, .pac-item-selected {
+      background: #22263a;
+    }
+    .pac-item-query {
+      color: #00d4aa;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .pac-icon { display: none; } /* hide default Google pin icons */
+    .pac-matched { color: #00d4aa; font-weight: 700; }
+    /* Address search field wrapper */
+    .address-search-wrap {
+      position: relative;
+      margin-bottom: 14px;
+    }
+    .address-search-wrap .modal-input {
+      margin-bottom: 0;
+      padding-left: 42px;
+    }
+    .address-search-wrap .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6b7280;
+      font-size: 16px;
+      pointer-events: none;
+    }
+    .address-search-wrap .clear-btn {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #6b7280;
+      font-size: 16px;
+      cursor: pointer;
+      display: none;
+      padding: 2px;
+    }
+    .address-search-wrap .clear-btn.visible { display: block; }
   </style>
 </head>
 <body>
@@ -747,7 +811,11 @@
     <input type="text" id="dest-name" class="modal-input" placeholder="e.g. Caltex Station Iligan">
 
     <div class="modal-label">Address / Landmark (for Maps)</div>
-    <input type="text" id="dest-address" class="modal-input" placeholder="e.g. Iligan City, Lanao del Norte">
+    <div class="address-search-wrap">
+      <i class="bi bi-search search-icon"></i>
+      <input type="text" id="dest-address" class="modal-input" placeholder="Search a place or address…" autocomplete="off">
+      <button type="button" class="clear-btn" id="address-clear-btn" onclick="window.clearAddressField()"><i class="bi bi-x-lg"></i></button>
+    </div>
 
     <div class="modal-label">Actual Expense (₱)</div>
     <input type="number" id="dest-expense" class="modal-input" placeholder="0.00">
@@ -880,18 +948,33 @@
     window.closeEditor(id);
   };
 
-  window.saveDestination = () => {
+window.saveDestination = () => {
     const id = document.getElementById('edit-id').value;
+    const rawInput = document.getElementById('dest-address').value;
+    
+    // Logic: If the user selected a place via Autocomplete, window.validatedAddress will be set.
+    // If they typed manually and didn't select, we fallback to the raw input.
+    const finalAddress = (window.validatedAddress && window.validatedAddress.length > 0) 
+                         ? window.validatedAddress 
+                         : rawInput;
+
     const payload = {
-      name: document.getElementById('dest-name').value,
-      address: document.getElementById('dest-address').value,
-      expense: parseFloat(document.getElementById('dest-expense').value) || 0,
-      timestamp: Date.now()
+        name: document.getElementById('dest-name').value,
+        address: finalAddress, // This now uses the precise Google-verified address
+        expense: parseFloat(document.getElementById('dest-expense').value) || 0,
+        timestamp: Date.now()
     };
-    if (id) update(ref(db, 'itinerary/' + id), payload);
-    else push(ref(db, 'itinerary'), payload);
+
+    if (id) {
+        update(ref(db, 'itinerary/' + id), payload);
+    } else {
+        push(ref(db, 'itinerary'), payload);
+    }
+
+    // Reset the variable so it doesn't persist to the next save
+    window.validatedAddress = ""; 
     window.closeModal();
-  };
+};
 
   window.deleteItem = (key) => {
     if (confirm('Delete this waypoint?')) remove(ref(db, 'itinerary/' + key));
@@ -903,10 +986,24 @@
     document.getElementById('dest-address').value = '';
     document.getElementById('dest-expense').value = '';
     document.getElementById('modal-title').innerText = 'Add Waypoint';
+    document.getElementById('address-clear-btn').classList.remove('visible');
+    window.validatedAddress = '';
     modal.classList.add('open');
+    // Focus the name field after sheet animates in
+    setTimeout(() => document.getElementById('dest-name').focus(), 150);
   };
 
-  window.closeModal = () => modal.classList.remove('open');
+  window.closeModal = () => {
+    modal.classList.remove('open');
+    window.validatedAddress = '';
+  };
+
+  window.clearAddressField = () => {
+    document.getElementById('dest-address').value = '';
+    window.validatedAddress = '';
+    document.getElementById('address-clear-btn').classList.remove('visible');
+    document.getElementById('dest-address').focus();
+  };
 
   // Close modal on backdrop click
   modal.addEventListener('click', (e) => {
@@ -929,6 +1026,10 @@
   window.toggleDay = function(id) {
     document.getElementById(id).classList.toggle('open');
   };
+
+  // ── Global state ──────────────────────────────
+  window.validatedAddress = '';
+  let placesAutocomplete = null;  // created once after Maps loads
 
   // Google Maps
   let map, directionsService, directionsRenderer, userMarker;
@@ -964,6 +1065,43 @@
 
     directionsRenderer.setMap(map);
     trackUserLocation();
+
+    // ── Init Places Autocomplete ONCE after Maps is ready ──
+    const addressInput = document.getElementById('dest-address');
+    placesAutocomplete = new google.maps.places.Autocomplete(addressInput, {
+      fields: ['formatted_address', 'name', 'geometry'],
+      types: ['establishment', 'geocode']
+    });
+
+    // Prevent Autocomplete from hijacking Enter key on the form
+    addressInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') e.preventDefault();
+    });
+
+    // Show/hide clear button as user types
+    addressInput.addEventListener('input', () => {
+      const clearBtn = document.getElementById('address-clear-btn');
+      if (addressInput.value.length > 0) {
+        clearBtn.classList.add('visible');
+      } else {
+        clearBtn.classList.remove('visible');
+        window.validatedAddress = '';
+      }
+    });
+
+    // When user picks a place from the dropdown
+    placesAutocomplete.addListener('place_changed', () => {
+      const place = placesAutocomplete.getPlace();
+      if (place && place.formatted_address) {
+        window.validatedAddress = place.formatted_address;
+        // Auto-fill destination name if it's still empty
+        const nameInput = document.getElementById('dest-name');
+        if (!nameInput.value.trim() && place.name) {
+          nameInput.value = place.name;
+        }
+        document.getElementById('address-clear-btn').classList.add('visible');
+      }
+    });
   };
 
   function trackUserLocation() {
