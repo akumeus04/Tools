@@ -683,14 +683,14 @@
         </div>
         <i class="bi bi-lightning-fill" style="font-size:32px; color: var(--accent); opacity:0.4;"></i>
       </div>
-      <div class="expense-rows">
+<div class="expense-rows">
         <div class="expense-cell">
           <div class="expense-cell-label">Base Estimate</div>
-          <div class="expense-cell-val">₱18,874</div>
+          <div class="expense-cell-val">₱20,400</div>
         </div>
         <div class="expense-cell">
           <div class="expense-cell-label">Grand Total</div>
-          <div class="expense-cell-val gold" id="dynamic-grand-total">₱18,874.00</div>
+          <div class="expense-cell-val gold" id="dynamic-grand-total">₱20,400.00</div>
         </div>
       </div>
     </div>
@@ -707,9 +707,10 @@
     </ul>
   </div>
 
-  <!-- ITINERARY PANEL -->
-<div class="tab-panel" id="panel-itinerary">
+<!-- ITINERARY PANEL -->
+  <div class="tab-panel" id="panel-itinerary">
 
+    <!-- Day 1 -->
     <div class="day-card open" id="day1">
       <div class="day-header" onclick="toggleDay('day1')">
         <div class="day-badge">D1</div>
@@ -724,6 +725,7 @@
           <li class="tl-item"><div class="tl-time">6:00 AM</div><div class="tl-dot"></div><div class="tl-text">Depart Paglaum Village, Bacolod City</div></li>
           <li class="tl-item"><div class="tl-time">9:30 AM</div><div class="tl-dot"></div><div class="tl-text">Arrive Dumaguete City Port</div></li>
           
+          <!-- RoRo Options -->
           <li class="tl-item">
             <div class="tl-time">RoRo<br>Options</div>
             <div class="tl-dot"></div>
@@ -743,8 +745,8 @@
         </ul>
         <div class="cost-pill">
           <div class="cost-pill-label">💰 Est. Expenses</div>
-          <div class="cost-row">Fuel (15.5 L / 233 km): ₱1,252</div>
-          <div class="cost-row">RoRo Option 1 (Montenegro): ₱6,336 (Vehicle + Vicente & Joana free)</div>
+          <div class="cost-row">Fuel (Gasoline / ~233 km): ₱1,252</div>
+          <div class="cost-row">RoRo Option 1 (Montenegro): ₱6,336 (Vehicle + 2 pax free)</div>
           <div class="cost-row">RoRo Option 2 (FastCat): ₱7,207 (Vehicle ₱6,415 + 1 Pax ₱792)</div>
           <div class="cost-row">Food: ₱1,200 – ₱1,500</div>
           <div class="cost-row">Hotel (Travelbee Dipolog): ₱1,200 – ₱1,500</div>
@@ -753,57 +755,85 @@
       </div>
     </div>
 
+    <!-- Day 2 -->
     <div class="day-card" id="day2">
       <div class="day-header" onclick="toggleDay('day2')">
         <div class="day-badge">D2</div>
         <div class="day-title-wrap">
-          <div class="day-title">Northern Mindanao Coastal Drive</div>
-          <div class="day-range">Dipolog → CDO · ~290 km</div>
+          <div class="day-title">Coastal Highway to Agusan</div>
+          <div class="day-range">Dipolog → Butuan City · ~430 km</div>
         </div>
         <i class="bi bi-chevron-down day-chevron"></i>
       </div>
       <div class="day-body">
         <ul class="timeline">
-          <li class="tl-item"><div class="tl-time">8:00 AM</div><div class="tl-dot"></div><div class="tl-text">Breakfast in Dipolog, hit the road</div></li>
-          <li class="tl-item"><div class="tl-time">11:00 AM</div><div class="tl-dot"></div><div class="tl-text">Early lunch stop — Iligan City area</div></li>
-          <li class="tl-item"><div class="tl-time">1:00 PM</div><div class="tl-dot"></div><div class="tl-text">Arrive Cagayan de Oro City (CDO)</div></li>
-          <li class="tl-item"><div class="tl-time">Night</div><div class="tl-dot"></div><div class="tl-text">Overnight — CDO Budget Inn (e.g., RedDoorz or Rich Manor to match ₱1,500 budget)</div></li>
+          <li class="tl-item"><div class="tl-time">7:00 AM</div><div class="tl-dot"></div><div class="tl-text">Breakfast in Dipolog, hit the road</div></li>
+          <li class="tl-item"><div class="tl-time">12:00 PM</div><div class="tl-dot"></div><div class="tl-text">Lunch stop — Cagayan de Oro (CDO)</div></li>
+          <li class="tl-item"><div class="tl-time">4:00 PM</div><div class="tl-dot"></div><div class="tl-text">Arrive Butuan City</div></li>
+          <li class="tl-item"><div class="tl-time">Night</div><div class="tl-dot"></div><div class="tl-text">Overnight — Go Hotels Butuan or My Dream Place Hotel</div></li>
         </ul>
         <div class="cost-pill">
           <div class="cost-pill-label">💰 Est. Expenses</div>
-          <div class="cost-row">Fuel (19.3 L / 290 km): ₱1,560</div>
+          <div class="cost-row">Fuel (Gasoline / ~430 km): ~₱1,720</div>
           <div class="cost-row">Food: ₱1,200 – ₱1,500</div>
           <div class="cost-row">Hotel: ₱1,300 – ₱1,500</div>
-          <div class="cost-total">Day 2 Total: ₱4,060 – ₱4,560</div>
+          <div class="cost-total">Day 2 Total: ₱4,220 – ₱4,720</div>
         </div>
       </div>
     </div>
 
+    <!-- Day 3 -->
     <div class="day-card" id="day3">
       <div class="day-header" onclick="toggleDay('day3')">
         <div class="day-badge">D3</div>
         <div class="day-title-wrap">
-          <div class="day-title">BUDA Mountain Pass → Davao</div>
-          <div class="day-range">CDO → Davao City · ~293 km</div>
+          <div class="day-title">The Enchanted River</div>
+          <div class="day-range">Butuan → Hinatuan/Bislig · ~140 km</div>
         </div>
         <i class="bi bi-chevron-down day-chevron"></i>
       </div>
       <div class="day-body">
         <ul class="timeline">
-          <li class="tl-item"><div class="tl-time">7:00 AM</div><div class="tl-dot"></div><div class="tl-text">Depart CDO heading south toward Bukidnon</div></li>
-          <li class="tl-item"><div class="tl-time">10:30 AM</div><div class="tl-dot"></div><div class="tl-text">Coffee / lunch break — Marilog District</div></li>
-          <li class="tl-item"><div class="tl-time">12:30 PM</div><div class="tl-dot"></div><div class="tl-text">🎉 Arrive — Buhangin/Panacan, Davao City</div></li>
-          <li class="tl-item"><div class="tl-time">Night</div><div class="tl-dot"></div><div class="tl-text">Check-in — RedDoorz near Davao Airport or Domicilio Lorenzo (Avoids downtown Poblacion traffic)</div></li>
+          <li class="tl-item"><div class="tl-time">8:00 AM</div><div class="tl-dot"></div><div class="tl-text">Depart Butuan City</div></li>
+          <li class="tl-item"><div class="tl-time">11:30 AM</div><div class="tl-dot"></div><div class="tl-text">Arrive at Enchanted River, Hinatuan</div></li>
+          <li class="tl-item"><div class="tl-time">Afternoon</div><div class="tl-dot"></div><div class="tl-text">Swim, relax, and enjoy the scenery</div></li>
+          <li class="tl-item"><div class="tl-time">5:00 PM</div><div class="tl-dot"></div><div class="tl-text">Check-in — Kamayo Hostel (Hinatuan) or Paper Country Inn (Bislig)</div></li>
         </ul>
         <div class="cost-pill">
           <div class="cost-pill-label">💰 Est. Expenses</div>
-          <div class="cost-row">Fuel (19.5 L / 293 km): ₱1,576</div>
-          <div class="cost-row">Food: ₱1,100 – ₱1,500</div>
-          <div class="cost-row">Hotel: ₱1,300 – ₱1,500</div>
-          <div class="cost-total">Day 3 Total: ₱3,976 – ₱4,576</div>
+          <div class="cost-row">Fuel (Gasoline / ~140 km): ~₱560</div>
+          <div class="cost-row">Entrance/Cottage Fees: ~₱500</div>
+          <div class="cost-row">Food: ₱1,200 – ₱1,500</div>
+          <div class="cost-row">Hotel: ₱1,200 – ₱1,500</div>
+          <div class="cost-total">Day 3 Total: ₱3,460 – ₱4,060</div>
         </div>
       </div>
     </div>
+
+    <!-- Day 4 -->
+    <div class="day-card" id="day4">
+      <div class="day-header" onclick="toggleDay('day4')">
+        <div class="day-badge">D4</div>
+        <div class="day-title-wrap">
+          <div class="day-title">Final Stretch to Davao</div>
+          <div class="day-range">Hinatuan → Davao City · ~200 km</div>
+        </div>
+        <i class="bi bi-chevron-down day-chevron"></i>
+      </div>
+      <div class="day-body">
+        <ul class="timeline">
+          <li class="tl-item"><div class="tl-time">8:00 AM</div><div class="tl-dot"></div><div class="tl-text">Depart Hinatuan / Bislig</div></li>
+          <li class="tl-item"><div class="tl-time">11:30 AM</div><div class="tl-dot"></div><div class="tl-text">🎉 Arrive — Bunawan, Davao City (Celebratory Lunch!)</div></li>
+        </ul>
+        <div class="cost-pill">
+          <div class="cost-pill-label">💰 Est. Expenses</div>
+          <div class="cost-row">Fuel (Gasoline / ~200 km): ~₱800</div>
+          <div class="cost-row">Food: ₱1,000 – ₱1,200</div>
+          <div class="cost-total">Day 4 Total: ₱1,800 – ₱2,000</div>
+        </div>
+      </div>
+    </div>
+    
     <div style="height: 14px;"></div>
   </div><!-- end panel-itinerary -->
 
@@ -867,7 +897,7 @@ const loginScreen = document.getElementById('login-screen');
   const modal = document.getElementById('modal');
   
   // Updated to match the new calculated estimate (Montenegro RoRo + Hotels)
-  const baseEstimatedCost = 18874;
+  const baseEstimatedCost = 20400;
 
   document.getElementById('login-btn').addEventListener('click', () => {
     signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value)
