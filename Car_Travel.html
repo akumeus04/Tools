@@ -686,11 +686,11 @@
       <div class="expense-rows">
         <div class="expense-cell">
           <div class="expense-cell-label">Base Estimate</div>
-          <div class="expense-cell-val">₱24,268</div>
+          <div class="expense-cell-val">₱18,874</div>
         </div>
         <div class="expense-cell">
           <div class="expense-cell-label">Grand Total</div>
-          <div class="expense-cell-val gold" id="dynamic-grand-total">₱17,878.00</div>
+          <div class="expense-cell-val gold" id="dynamic-grand-total">₱18,874.00</div>
         </div>
       </div>
     </div>
@@ -708,9 +708,8 @@
   </div>
 
   <!-- ITINERARY PANEL -->
-  <div class="tab-panel" id="panel-itinerary">
+<div class="tab-panel" id="panel-itinerary">
 
-    <!-- Day 1 -->
     <div class="day-card open" id="day1">
       <div class="day-header" onclick="toggleDay('day1')">
         <div class="day-badge">D1</div>
@@ -724,24 +723,36 @@
         <ul class="timeline">
           <li class="tl-item"><div class="tl-time">6:00 AM</div><div class="tl-dot"></div><div class="tl-text">Depart Paglaum Village, Bacolod City</div></li>
           <li class="tl-item"><div class="tl-time">9:30 AM</div><div class="tl-dot"></div><div class="tl-text">Arrive Dumaguete City Port</div></li>
-          <li class="tl-item"><div class="tl-time">9:30–<br>11:30</div><div class="tl-dot"></div><div class="tl-text">Secure RoRo tickets & early lunch</div></li>
-          <li class="tl-item"><div class="tl-time">12:00 PM</div><div class="tl-dot"></div><div class="tl-text">Board FastCat or Montenegro RoRo</div></li>
+          
+          <li class="tl-item">
+            <div class="tl-time">RoRo<br>Options</div>
+            <div class="tl-dot"></div>
+            <div class="tl-text">
+              <strong>Option 1: Montenegro Lines</strong> (Recommended)<br>
+              Schedules: 2:00 AM, 12:00 PM, 8:00 PM<br>
+              <a href="https://www.facebook.com/photo/?fbid=990728553811115&set=pb.100086219397330.-2207520000" target="_blank" style="color: var(--accent); font-size: 0.85em; text-decoration: none;"><i class="bi bi-link-45deg"></i> View Schedule & Fares</a>
+              <br><br>
+              <strong>Option 2: FastCat</strong><br>
+              Schedules: 8:00 AM, 8:00 PM<br>
+              <a href="https://fastcat.ph/routes-schedules/" target="_blank" style="color: var(--accent); font-size: 0.85em; text-decoration: none;"><i class="bi bi-link-45deg"></i> View Schedule & Fares</a>
+            </div>
+          </li>
+          
           <li class="tl-item"><div class="tl-time">4–5 PM</div><div class="tl-dot"></div><div class="tl-text">Arrive Dapitan City Port</div></li>
-          <li class="tl-item"><div class="tl-time">Night</div><div class="tl-dot"></div><div class="tl-text">Overnight — Dipolog City (Ariana Hotel or D' Hotel & Suites)</div></li>
+          <li class="tl-item"><div class="tl-time">Night</div><div class="tl-dot"></div><div class="tl-text">Overnight — Travelbee Heritage Inn, Dipolog City (Quiet area, avoids Dapitan port traffic)</div></li>
         </ul>
         <div class="cost-pill">
           <div class="cost-pill-label">💰 Est. Expenses</div>
           <div class="cost-row">Fuel (15.5 L / 233 km): ₱1,252</div>
-          <div class="cost-row">RoRo Freight: ₱3,890 – ₱5,280</div>
-          <div class="cost-row">Passenger Fares (3 pax): ₱2,100</div>
+          <div class="cost-row">RoRo Option 1 (Montenegro): ₱6,336 (Vehicle + Vicente & Joana free)</div>
+          <div class="cost-row">RoRo Option 2 (FastCat): ₱7,207 (Vehicle ₱6,415 + 1 Pax ₱792)</div>
           <div class="cost-row">Food: ₱1,200 – ₱1,500</div>
-          <div class="cost-row">Hotel: ₱2,000 – ₱4,000</div>
-          <div class="cost-total">Day 1 Total: ₱10,442 – ₱14,132</div>
+          <div class="cost-row">Hotel (Travelbee Dipolog): ₱1,200 – ₱1,500</div>
+          <div class="cost-total">Day 1 Total: ~₱9,988 – ₱10,588 (Using Montenegro)</div>
         </div>
       </div>
     </div>
 
-    <!-- Day 2 -->
     <div class="day-card" id="day2">
       <div class="day-header" onclick="toggleDay('day2')">
         <div class="day-badge">D2</div>
@@ -756,19 +767,18 @@
           <li class="tl-item"><div class="tl-time">8:00 AM</div><div class="tl-dot"></div><div class="tl-text">Breakfast in Dipolog, hit the road</div></li>
           <li class="tl-item"><div class="tl-time">11:00 AM</div><div class="tl-dot"></div><div class="tl-text">Early lunch stop — Iligan City area</div></li>
           <li class="tl-item"><div class="tl-time">1:00 PM</div><div class="tl-dot"></div><div class="tl-text">Arrive Cagayan de Oro City (CDO)</div></li>
-          <li class="tl-item"><div class="tl-time">Night</div><div class="tl-dot"></div><div class="tl-text">Overnight — Limketkai Luxe Hotel or Mallberry Suites</div></li>
+          <li class="tl-item"><div class="tl-time">Night</div><div class="tl-dot"></div><div class="tl-text">Overnight — CDO Budget Inn (e.g., RedDoorz or Rich Manor to match ₱1,500 budget)</div></li>
         </ul>
         <div class="cost-pill">
           <div class="cost-pill-label">💰 Est. Expenses</div>
           <div class="cost-row">Fuel (19.3 L / 290 km): ₱1,560</div>
           <div class="cost-row">Food: ₱1,200 – ₱1,500</div>
-          <div class="cost-row">Hotel: ₱2,000 – ₱4,000</div>
-          <div class="cost-total">Day 2 Total: ₱4,760 – ₱7,060</div>
+          <div class="cost-row">Hotel: ₱1,300 – ₱1,500</div>
+          <div class="cost-total">Day 2 Total: ₱4,060 – ₱4,560</div>
         </div>
       </div>
     </div>
 
-    <!-- Day 3 -->
     <div class="day-card" id="day3">
       <div class="day-header" onclick="toggleDay('day3')">
         <div class="day-badge">D3</div>
@@ -782,13 +792,15 @@
         <ul class="timeline">
           <li class="tl-item"><div class="tl-time">7:00 AM</div><div class="tl-dot"></div><div class="tl-text">Depart CDO heading south toward Bukidnon</div></li>
           <li class="tl-item"><div class="tl-time">10:30 AM</div><div class="tl-dot"></div><div class="tl-text">Coffee / lunch break — Marilog District</div></li>
-          <li class="tl-item"><div class="tl-time">12:30 PM</div><div class="tl-dot"></div><div class="tl-text">🎉 Arrive — Bunawan, Davao City</div></li>
+          <li class="tl-item"><div class="tl-time">12:30 PM</div><div class="tl-dot"></div><div class="tl-text">🎉 Arrive — Buhangin/Panacan, Davao City</div></li>
+          <li class="tl-item"><div class="tl-time">Night</div><div class="tl-dot"></div><div class="tl-text">Check-in — RedDoorz near Davao Airport or Domicilio Lorenzo (Avoids downtown Poblacion traffic)</div></li>
         </ul>
         <div class="cost-pill">
           <div class="cost-pill-label">💰 Est. Expenses</div>
           <div class="cost-row">Fuel (19.5 L / 293 km): ₱1,576</div>
           <div class="cost-row">Food: ₱1,100 – ₱1,500</div>
-          <div class="cost-total">Day 3 Total: ₱2,676 – ₱3,076</div>
+          <div class="cost-row">Hotel: ₱1,300 – ₱1,500</div>
+          <div class="cost-total">Day 3 Total: ₱3,976 – ₱4,576</div>
         </div>
       </div>
     </div>
@@ -847,13 +859,15 @@
   const db  = getDatabase(app);
   const auth = getAuth(app);
 
-  const loginScreen = document.getElementById('login-screen');
+const loginScreen = document.getElementById('login-screen');
   const appScreen   = document.getElementById('app-screen');
   const itineraryList = document.getElementById('itinerary-list');
   const totalExpensesEl = document.getElementById('total-expenses');
   const dynamicGrandTotalEl = document.getElementById('dynamic-grand-total');
   const modal = document.getElementById('modal');
-  const baseEstimatedCost = 24268;
+  
+  // Updated to match the new calculated estimate (Montenegro RoRo + Hotels)
+  const baseEstimatedCost = 18874;
 
   document.getElementById('login-btn').addEventListener('click', () => {
     signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value)
