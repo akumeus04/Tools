@@ -5,12 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Branch Hourly Net Sales</title>
     <style>
-        /* CSS remains exactly the same */
-        :root {
-            --primary-color: #0056b3;
-            --border-color: #cdd6e0;
-            --bg-color: #f8f9fa;
-        }
+        /* CSS styling remains the same */
+        :root { --primary-color: #0056b3; --border-color: #cdd6e0; --bg-color: #f8f9fa; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 20px; background-color: #f0f2f5; color: #333; }
         .container { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         h2 { margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; }
@@ -101,7 +97,7 @@
     // ==========================================
     // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL BELOW
     // ==========================================
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzf937QMoNYJKsKGUZcFwyPDsuyTFObEExe6Rbv_3OXwwhctttdtg1Zzyxm354Nu6L3/exec"; 
+    const WEB_APP_URL = "YOUR_WEB_APP_URL_HERE"; 
 
     let rawSales = []; 
     let manualHeadCounts = {}; 
@@ -109,12 +105,64 @@
     const endHour = 22;
 
     document.addEventListener("DOMContentLoaded", () => {
+        // Set current time as default
         const now = new Date();
         const timeString = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
         document.getElementById('saleTime').value = timeString;
-        renderTable();
+        
+        // Fetch data from Sheet on load
+        loadDataFromSheet();
     });
 
+    // --- READ FROM GOOGLE SHEET (JSONP Method) ---
+    function loadDataFromSheet() {
+        const statusEl = document.getElementById('syncStatus');
+        statusEl.textContent = "Loading data from Sheet...";
+        statusEl.className = "status-text";
+
+        // Create a script tag to bypass CORS restrictions
+        const script = document.createElement('script');
+        // Add a timestamp to prevent browser caching, and call "processSheetData" function
+        script.src = `${WEB_APP_URL}?callback=processSheetData&t=${new Date().getTime()}`;
+        document.body.appendChild(script);
+    }
+
+    // This function is triggered by the Google App Script once the data loads
+    function processSheetData(sheetData) {
+        document.getElementById('syncStatus').textContent = "✓ Data Loaded";
+        document.getElementById('syncStatus').className = "status-text status-success";
+        setTimeout(() => document.getElementById('syncStatus').textContent = "", 3000);
+
+        rawSales = []; // Clear local array
+        
+        // Skip row 0 if it contains headers. Loop through rows.
+        for (let i = 0; i < sheetData.length; i++) {
+            const row = sheetData[i];
+            
+            // Expected columns: [0:Timestamp, 1:Region, 2:Branch, 3:HourBlock, 4:Time, 5:Amount]
+            if (row.length >= 6) {
+                const timeVal = row[4];
+                const amountVal = parseFloat(row[5]);
+                
+                if (timeVal && !isNaN(amountVal)) {
+                    const hour = parseInt(timeVal.split(':')[0], 10);
+                    rawSales.push({
+                        hour: hour,
+                        time: timeVal,
+                        amount: amountVal
+                    });
+
+                    // Set Region and Branch inputs to the last known values
+                    if (row[1]) document.getElementById('region').value = row[1];
+                    if (row[2]) document.getElementById('branch').value = row[2];
+                }
+            }
+        }
+        
+        renderTable();
+    }
+
+    // --- WRITE TO GOOGLE SHEET ---
     function addSale() {
         const timeInput = document.getElementById('saleTime').value;
         const amountInput = parseFloat(document.getElementById('saleAmount').value);
@@ -129,14 +177,14 @@
         const hour = parseInt(timeInput.split(':')[0], 10);
         const hourBlock = formatHourRange(hour);
 
-        // 1. Update UI locally immediately
+        // 1. Update locally instantly
         rawSales.push({ hour: hour, time: timeInput, amount: amountInput });
         document.getElementById('recentLogs').innerHTML = `<em>Last entry logged: ${amountInput.toFixed(2)} at ${timeInput}</em>`;
         document.getElementById('saleAmount').value = '';
         document.getElementById('saleAmount').focus();
         renderTable();
 
-        // 2. Send payload to Google Sheets
+        // 2. Send to Google Sheets
         const payload = {
             region: regionInput,
             branch: branchInput,
@@ -151,11 +199,10 @@
 
         fetch(WEB_APP_URL, {
             method: 'POST',
-            mode: 'no-cors', // Crucial for bypassing local file:// CORS policies
+            mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         }).then(() => {
-            // no-cors obscures the exact response, but a resolution implies network success
             statusEl.textContent = "✓ Saved to Sheet";
             statusEl.className = "status-text status-success";
             setTimeout(() => statusEl.textContent = "", 3000);
@@ -166,6 +213,7 @@
         });
     }
 
+    // --- TABLE LOGIC ---
     function adjustHC(hour, delta) {
         const defaultHC = parseInt(document.getElementById('defaultHc').value, 10) || 1;
         if (manualHeadCounts[hour] === undefined) { manualHeadCounts[hour] = defaultHC; }
