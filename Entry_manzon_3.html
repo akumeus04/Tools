@@ -133,7 +133,7 @@
         document.body.appendChild(script);
     }
 
-    function processSheetData(sheetData) {
+function processSheetData(sheetData) {
         document.getElementById('syncStatus').textContent = "✓ Data Loaded";
         document.getElementById('syncStatus').className = "status-text status-success";
         setTimeout(() => document.getElementById('syncStatus').textContent = "", 3000);
@@ -145,13 +145,32 @@
             const row = sheetData[i];
             
             if (row.length >= 6) {
-                const dateVal = row[0].trim();
-                const timeVal = row[4];
-                // strip out dollar signs or commas just in case
-                const amountVal = parseFloat(row[5].replace(/[^0-9.-]+/g,"")); 
+                // 1. FIX THE DATE FORMAT: Force Google Sheet's date back to YYYY-MM-DD
+                let dateVal = row[0].trim();
+                const d = new Date(dateVal);
+                if (!isNaN(d.getTime())) {
+                    const yyyy = d.getFullYear();
+                    const mm = String(d.getMonth() + 1).padStart(2, '0');
+                    const dd = String(d.getDate()).padStart(2, '0');
+                    dateVal = `${yyyy}-${mm}-${dd}`;
+                } else if (dateVal.includes('/')) {
+                    // Fallback just in case Google Sheets uses DD/MM/YYYY
+                    const parts = dateVal.split('/');
+                    if (parts[2].length === 4) {
+                        dateVal = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+                    }
+                }
+
+                // 2. FIX THE TIME FORMAT: Handle both "14:30" (military) and "2:30 PM"
+                const timeVal = row[4].toString().trim();
+                let hour = parseInt(timeVal.split(':')[0], 10);
+                if (timeVal.toUpperCase().includes('PM') && hour !== 12) hour += 12;
+                if (timeVal.toUpperCase().includes('AM') && hour === 12) hour = 0;
+
+                // Strip out any currency symbols or commas
+                const amountVal = parseFloat(row[5].toString().replace(/[^0-9.-]+/g,"")); 
                 
                 if (dateVal && timeVal && !isNaN(amountVal)) {
-                    const hour = parseInt(timeVal.split(':')[0], 10);
                     allHistoricalSales.push({
                         date: dateVal,
                         region: row[1],
@@ -164,9 +183,8 @@
             }
         }
         
-        changeDate(); // Triggers the filter & render process
+        changeDate(); // Triggers the filter & render process to show the data
     }
-
     function changeDate() {
         const selectedDate = document.getElementById('currentDate').value;
         
