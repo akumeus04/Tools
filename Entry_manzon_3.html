@@ -106,8 +106,8 @@
     let rawSales = []; // Stores only the current selected date's sales
     let manualHeadCounts = {}; // Keyed by date: { "2026-07-20": { 8: 6 } }
     
-    const startHour = 6;
-    const endHour = 22;
+const startHour = 0;  // Starts at 12:00 AM (Midnight)
+const endHour = 23;   // Ends at 11:00 PM
 
     document.addEventListener("DOMContentLoaded", () => {
         // Set today's date taking local timezone into account
