@@ -123,17 +123,27 @@
         loadDataFromSheet();
     });
 
+// --- READ FROM GOOGLE SHEET (Modern Fetch) ---
     function loadDataFromSheet() {
         const statusEl = document.getElementById('syncStatus');
         statusEl.textContent = "Loading data from Sheet...";
         statusEl.className = "status-text";
 
-        const script = document.createElement('script');
-        script.src = `${WEB_APP_URL}?callback=processSheetData&t=${new Date().getTime()}`;
-        document.body.appendChild(script);
+        // Using standard fetch now that you are on GitHub Pages
+        fetch(`${WEB_APP_URL}?t=${new Date().getTime()}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log("🔍 RAW DATA FROM GOOGLE SHEETS:", data); // <-- THIS WILL SHOW US THE PROBLEM
+                processSheetData(data);
+            })
+            .catch(error => {
+                console.error("Error fetching data:", error);
+                statusEl.textContent = "✗ Load Error (Check Console)";
+                statusEl.className = "status-text status-error";
+            });
     }
 
-function processSheetData(sheetData) {
+    function processSheetData(sheetData) {
         document.getElementById('syncStatus').textContent = "✓ Data Loaded";
         document.getElementById('syncStatus').className = "status-text status-success";
         setTimeout(() => document.getElementById('syncStatus').textContent = "", 3000);
@@ -144,46 +154,61 @@ function processSheetData(sheetData) {
         for (let i = 1; i < sheetData.length; i++) {
             const row = sheetData[i];
             
-            if (row.length >= 6) {
-                // 1. FIX THE DATE FORMAT: Force Google Sheet's date back to YYYY-MM-DD
-                let dateVal = row[0].trim();
-                const d = new Date(dateVal);
-                if (!isNaN(d.getTime())) {
-                    const yyyy = d.getFullYear();
-                    const mm = String(d.getMonth() + 1).padStart(2, '0');
-                    const dd = String(d.getDate()).padStart(2, '0');
-                    dateVal = `${yyyy}-${mm}-${dd}`;
-                } else if (dateVal.includes('/')) {
-                    // Fallback just in case Google Sheets uses DD/MM/YYYY
-                    const parts = dateVal.split('/');
-                    if (parts[2].length === 4) {
-                        dateVal = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+            // Ensure the row actually has data
+            if (!row || row.length < 6 || !row[0]) continue;
+
+            try {
+                // 1. DATE NORMALIZATION
+                let dateVal = String(row[0]).trim();
+                if (dateVal.includes('T')) {
+                    // Handle ISO strings (e.g. 2026-07-20T14:30:00.000Z)
+                    dateVal = dateVal.split('T')[0];
+                } else {
+                    const d = new Date(dateVal);
+                    if (!isNaN(d.getTime())) {
+                        const yyyy = d.getFullYear();
+                        const mm = String(d.getMonth() + 1).padStart(2, '0');
+                        const dd = String(d.getDate()).padStart(2, '0');
+                        dateVal = `${yyyy}-${mm}-${dd}`;
                     }
                 }
 
-                // 2. FIX THE TIME FORMAT: Handle both "14:30" (military) and "2:30 PM"
-                const timeVal = row[4].toString().trim();
-                let hour = parseInt(timeVal.split(':')[0], 10);
-                if (timeVal.toUpperCase().includes('PM') && hour !== 12) hour += 12;
-                if (timeVal.toUpperCase().includes('AM') && hour === 12) hour = 0;
-
-                // Strip out any currency symbols or commas
-                const amountVal = parseFloat(row[5].toString().replace(/[^0-9.-]+/g,"")); 
+                // 2. TIME NORMALIZATION
+                const timeVal = String(row[4]).trim();
+                let hour;
                 
-                if (dateVal && timeVal && !isNaN(amountVal)) {
+                if (timeVal.includes('T')) {
+                    // If Google sent a full timestamp
+                    hour = new Date(timeVal).getHours();
+                } else {
+                    // If Google sent text like "14:30" or "02:30 PM"
+                    hour = parseInt(timeVal.split(':')[0], 10);
+                    if (timeVal.toUpperCase().includes('PM') && hour !== 12) hour += 12;
+                    if (timeVal.toUpperCase().includes('AM') && hour === 12) hour = 0;
+                }
+
+                // 3. AMOUNT NORMALIZATION
+                const amountVal = parseFloat(String(row[5]).replace(/[^0-9.-]+/g,"")); 
+                
+                // Only push if we successfully parsed the date, time, and amount
+                if (dateVal && !isNaN(hour) && !isNaN(amountVal)) {
                     allHistoricalSales.push({
                         date: dateVal,
-                        region: row[1],
-                        branch: row[2],
+                        region: String(row[1] || ""),
+                        branch: String(row[2] || ""),
                         hour: hour,
                         time: timeVal,
                         amount: amountVal
                     });
+                } else {
+                    console.warn("⚠️ Skipped invalid row:", row);
                 }
+            } catch (err) {
+                console.error("Error processing row:", row, err);
             }
         }
         
-        changeDate(); // Triggers the filter & render process to show the data
+        changeDate(); // Triggers the filter & render process
     }
     function changeDate() {
         const selectedDate = document.getElementById('currentDate').value;
