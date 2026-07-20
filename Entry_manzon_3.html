@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Branch Hourly Net Sales</title>
+    <style>
+        /* CSS remains exactly the same */
+        :root {
+            --primary-color: #0056b3;
+            --border-color: #cdd6e0;
+            --bg-color: #f8f9fa;
+        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 20px; background-color: #f0f2f5; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; }
+        .section { background: var(--bg-color); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 20px; }
+        .form-row { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+        .input-group { display: flex; flex-direction: column; gap: 5px; }
+        .input-group label { font-weight: 600; font-size: 0.9em; }
+        input[type="text"], input[type="number"], input[type="time"] { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; }
+        button { background-color: var(--primary-color); color: white; border: none; padding: 9px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #004494; }
+        .btn-small { padding: 4px 8px; font-size: 1em; margin: 0 5px; width: 30px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid var(--border-color); padding: 10px; text-align: center; }
+        th { background-color: var(--primary-color); color: white; position: sticky; top: 0; }
+        tbody tr:nth-child(even) { background-color: #f8f9fa; }
+        tfoot { font-weight: bold; background-color: #e9ecef; }
+        .text-right { text-align: right; }
+        .hc-cell { display: flex; justify-content: center; align-items: center; gap: 10px; }
+        #recentLogs { font-size: 0.85em; color: #666; margin-top: 10px; }
+        .status-text { font-size: 0.85em; margin-left: 10px; font-weight: normal; }
+        .status-success { color: green; }
+        .status-error { color: red; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Branch Hourly Net Sales Dashboard <span id="syncStatus" class="status-text"></span></h2>
+
+    <div class="section">
+        <div class="form-row">
+            <div class="input-group">
+                <label for="region">Region</label>
+                <input type="text" id="region" placeholder="e.g., North America">
+            </div>
+            <div class="input-group">
+                <label for="branch">Branch</label>
+                <input type="text" id="branch" placeholder="e.g., Downtown Store">
+            </div>
+            <div class="input-group">
+                <label for="defaultHc">Default Head Counts</label>
+                <input type="number" id="defaultHc" value="5" min="1" onchange="renderTable()">
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="form-row">
+            <div class="input-group">
+                <label for="saleTime">Time of Sale</label>
+                <input type="time" id="saleTime" required>
+            </div>
+            <div class="input-group">
+                <label for="saleAmount">Sale Amount</label>
+                <input type="number" id="saleAmount" step="0.01" min="0" placeholder="0.00" required>
+            </div>
+            <div class="input-group" style="justify-content: flex-end;">
+                <button onclick="addSale()">Add Sale Entry</button>
+            </div>
+        </div>
+        <div id="recentLogs"><em>No sales logged yet...</em></div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Timestamp (Hourly)</th>
+                <th>Net Sales (ADS)</th>
+                <th>Transactions (ADS)</th>
+                <th>Head Counts</th>
+                <th>Sales Per Head</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+        <tfoot>
+            <tr>
+                <td class="text-right"><strong>GRAND TOTAL:</strong></td>
+                <td id="totalSales">0.00</td>
+                <td id="totalTrans">0</td>
+                <td id="totalHc">0</td>
+                <td id="totalSph">0.00</td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<script>
+    // ==========================================
+    // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL BELOW
+    // ==========================================
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzf937QMoNYJKsKGUZcFwyPDsuyTFObEExe6Rbv_3OXwwhctttdtg1Zzyxm354Nu6L3/exec"; 
+
+    let rawSales = []; 
+    let manualHeadCounts = {}; 
+    const startHour = 6;
+    const endHour = 22;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const now = new Date();
+        const timeString = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+        document.getElementById('saleTime').value = timeString;
+        renderTable();
+    });
+
+    function addSale() {
+        const timeInput = document.getElementById('saleTime').value;
+        const amountInput = parseFloat(document.getElementById('saleAmount').value);
+        const regionInput = document.getElementById('region').value || "N/A";
+        const branchInput = document.getElementById('branch').value || "N/A";
+
+        if (!timeInput || isNaN(amountInput)) {
+            alert("Please enter a valid time and sale amount.");
+            return;
+        }
+
+        const hour = parseInt(timeInput.split(':')[0], 10);
+        const hourBlock = formatHourRange(hour);
+
+        // 1. Update UI locally immediately
+        rawSales.push({ hour: hour, time: timeInput, amount: amountInput });
+        document.getElementById('recentLogs').innerHTML = `<em>Last entry logged: ${amountInput.toFixed(2)} at ${timeInput}</em>`;
+        document.getElementById('saleAmount').value = '';
+        document.getElementById('saleAmount').focus();
+        renderTable();
+
+        // 2. Send payload to Google Sheets
+        const payload = {
+            region: regionInput,
+            branch: branchInput,
+            hourBlock: hourBlock,
+            time: timeInput,
+            amount: amountInput
+        };
+
+        const statusEl = document.getElementById('syncStatus');
+        statusEl.textContent = "Syncing to sheet...";
+        statusEl.className = "status-text";
+
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            mode: 'no-cors', // Crucial for bypassing local file:// CORS policies
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).then(() => {
+            // no-cors obscures the exact response, but a resolution implies network success
+            statusEl.textContent = "✓ Saved to Sheet";
+            statusEl.className = "status-text status-success";
+            setTimeout(() => statusEl.textContent = "", 3000);
+        }).catch(err => {
+            console.error(err);
+            statusEl.textContent = "✗ Connection Error";
+            statusEl.className = "status-text status-error";
+        });
+    }
+
+    function adjustHC(hour, delta) {
+        const defaultHC = parseInt(document.getElementById('defaultHc').value, 10) || 1;
+        if (manualHeadCounts[hour] === undefined) { manualHeadCounts[hour] = defaultHC; }
+        manualHeadCounts[hour] += delta;
+        if (manualHeadCounts[hour] < 1) { manualHeadCounts[hour] = 1; }
+        renderTable();
+    }
+
+    function formatHourRange(hour) {
+        const format12 = (h) => {
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const h12 = h % 12 || 12;
+            return `${h12.toString().padStart(2, '0')}:00 ${ampm}`;
+        };
+        const nextHour = (hour + 1) % 24;
+        return `${format12(hour)} - ${format12(nextHour)}`;
+    }
+
+    function renderTable() {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        const defaultHC = parseInt(document.getElementById('defaultHc').value, 10) || 1;
+        let grandTotalSales = 0, grandTotalTrans = 0, grandTotalHc = 0;
+
+        for (let h = startHour; h <= endHour; h++) {
+            const hourSales = rawSales.filter(sale => sale.hour === h);
+            const netSales = hourSales.reduce((sum, sale) => sum + sale.amount, 0);
+            const transactions = hourSales.length;
+            const headCount = manualHeadCounts[h] !== undefined ? manualHeadCounts[h] : defaultHC;
+            const salesPerHead = headCount > 0 ? (netSales / headCount) : 0;
+
+            grandTotalSales += netSales;
+            grandTotalTrans += transactions;
+            grandTotalHc += headCount;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${formatHourRange(h)}</td>
+                <td>${netSales.toFixed(2)}</td>
+                <td>${transactions}</td>
+                <td>
+                    <div class="hc-cell">
+                        <button class="btn-small" onclick="adjustHC(${h}, -1)">-</button>
+                        <span>${headCount}</span>
+                        <button class="btn-small" onclick="adjustHC(${h}, 1)">+</button>
+                    </div>
+                </td>
+                <td>${salesPerHead.toFixed(2)}</td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        const overallSph = grandTotalHc > 0 ? (grandTotalSales / grandTotalHc) : 0;
+        document.getElementById('totalSales').innerText = grandTotalSales.toFixed(2);
+        document.getElementById('totalTrans').innerText = grandTotalTrans;
+        document.getElementById('totalHc').innerText = grandTotalHc;
+        document.getElementById('totalSph').innerText = overallSph.toFixed(2);
+    }
+</script>
+
+</body>
+</html>
