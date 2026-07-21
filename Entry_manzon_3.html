@@ -230,15 +230,15 @@
         const bData = branchCatalog[currentBranchId];
         const selectedDate = document.getElementById('currentDate').value;
         
-        // Document Header
-        doc.setFontSize(18);
-        doc.setTextColor(249, 115, 22); // Match theme primary
-        doc.text("Daily Sales Report", 14, 22);
+        // Document Header - Shifted Higher
+        doc.setFontSize(16);
+        doc.setTextColor(249, 115, 22); 
+        doc.text("Daily Sales Report", 14, 15);
         
-        doc.setFontSize(11);
+        doc.setFontSize(10);
         doc.setTextColor(51, 65, 85);
-        doc.text(`Branch: ${bData.name} (${bData.region})`, 14, 30);
-        doc.text(`Date: ${selectedDate}`, 14, 36);
+        doc.text(`Branch: ${bData.name} (${bData.region})`, 14, 22);
+        doc.text(`Date: ${selectedDate}`, 14, 28);
 
         const defaultHC = parseInt(document.getElementById('defaultHc').value, 10) || 0;
         const branchHCs = manualHeadCounts[currentBranchId] || {};
@@ -247,7 +247,6 @@
         let tableRows = [];
         let grandTotalSales = 0, grandTotalTrans = 0, grandTotalHc = 0;
 
-        // Construct clean data specifically for the formal report
         for (let h = startHour; h <= endHour; h++) {
             const hourSales = rawSales.filter(sale => sale.hour === h);
             const netSales = hourSales.reduce((sum, sale) => sum + sale.amount, 0);
@@ -264,7 +263,7 @@
                 formatHourRange(h),
                 netSales.toFixed(2),
                 transactions.toString(),
-                headCount.toString(), // Clean integer, no '+' or '-' UI elements
+                headCount.toString(),
                 salesPerHead.toFixed(2)
             ]);
         }
@@ -277,16 +276,22 @@
             ''
         ]];
 
-        // Generate autoTable
+        // Generate autoTable - Reduced padding and font size to force 1 page
         doc.autoTable({
-            startY: 44,
+            startY: 32, // Moved higher
             head: [['Timestamp (Hourly)', 'Net Sales', 'Transactions', 'Head Counts', 'Sales Per Head']],
             body: tableRows,
             foot: footers,
-            theme: 'grid', // Formal spreadsheet grid look
-            headStyles: { fillColor: [249, 115, 22], textColor: 255, fontStyle: 'bold' },
+            theme: 'grid', 
+            headStyles: { fillColor: [249, 115, 22], textColor: 255, fontStyle: 'bold', halign: 'center' },
             footStyles: { fillColor: [241, 245, 249], textColor: [51, 65, 85], fontStyle: 'bold' },
-            styles: { fontSize: 10, halign: 'center', cellPadding: 4, lineColor: [226, 232, 240], lineWidth: 0.1 },
+            styles: { 
+                fontSize: 8, // Smaller font
+                halign: 'center', 
+                cellPadding: 2, // Tighter padding
+                lineColor: [226, 232, 240], 
+                lineWidth: 0.1 
+            },
             columnStyles: { 0: { halign: 'left' } },
         });
 
