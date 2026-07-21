@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#f97316">
     <title>Multi-Branch Sales Management</title>
+    
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
     <style>
         :root { 
             --primary-color: #f97316; /* Vibrant Orange */
@@ -55,7 +60,9 @@
         input[type="text"], input[type="number"], input[type="date"] { padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 16px; outline: none; transition: border-color 0.2s; }
         input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1); }
         
-        /* Table Styles */
+        /* Table & Controls */
+        .table-controls { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .export-pdf-btn { flex-grow: 1; justify-content: center; display: flex; align-items: center; gap: 8px; max-width: 200px; }
         .table-wrapper { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border-color); }
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
         th, td { border-bottom: 1px solid var(--border-color); padding: 12px; text-align: center; }
@@ -69,34 +76,20 @@
         #recentLogs { font-size: 0.9em; color: #64748b; margin-top: 15px; background: #f8fafc; padding: 10px; border-radius: 6px; transition: all 0.3s ease; border-left: 4px solid transparent; }
 
         /* Mobile Toggle Button */
-        .mobile-toggle-btn { display: none; width: 100%; margin-bottom: 15px; background-color: #fff7ed; color: var(--primary-color); border: 1px solid var(--primary-color); }
+        .mobile-toggle-btn { display: none; width: 100%; background-color: #fff7ed; color: var(--primary-color); border: 1px solid var(--primary-color); }
 
         /* --- ANIMATIONS --- */
-        
-        /* 1. Loading Spinner */
         .spinner {
-            display: inline-block;
-            width: 14px;
-            height: 14px;
-            border: 2px solid rgba(249, 115, 22, 0.3);
-            border-radius: 50%;
-            border-top-color: var(--primary-color);
-            animation: spin 0.8s ease-in-out infinite;
-            margin-right: 8px;
+            display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(249, 115, 22, 0.3); border-radius: 50%; border-top-color: var(--primary-color); animation: spin 0.8s ease-in-out infinite; margin-right: 8px;
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* 2. Success Pop-In for Sales Entry */
         @keyframes popIn {
             0% { transform: scale(0.95); opacity: 0.5; background-color: #dcfce7; border-left-color: var(--success-color); }
             50% { transform: scale(1.02); }
             100% { transform: scale(1); opacity: 1; background-color: #dcfce7; border-left-color: var(--success-color); color: #166534; }
         }
-        .log-success-animate {
-            animation: popIn 0.4s ease-out forwards;
-        }
+        .log-success-animate { animation: popIn 0.4s ease-out forwards; }
 
         /* Responsive Mobile Adjustments */
         @media (max-width: 768px) {
@@ -109,7 +102,9 @@
             .input-group button { width: 100%; padding: 15px; }
             
             /* Table hiding logic for mobile */
-            .mobile-toggle-btn { display: block; }
+            .mobile-toggle-btn { display: block; flex-grow: 1;}
+            .export-pdf-btn { max-width: 100%; padding: 12px; }
+            .table-controls { flex-direction: column; }
             .table-wrapper { display: none; }
             .table-wrapper.show { display: block; }
         }
@@ -166,7 +161,10 @@
             <div id="recentLogs"><em>No sales logged yet...</em></div>
         </div>
 
-        <button id="mobileTableToggle" class="mobile-toggle-btn" onclick="toggleTable()">Show Sales Table</button>
+        <div class="table-controls">
+            <button id="mobileTableToggle" class="mobile-toggle-btn" onclick="toggleTable()">Show Sales Table</button>
+            <button class="btn-outline export-pdf-btn" onclick="exportToPDF()">📄 Export to PDF</button>
+        </div>
 
         <div id="tableWrapper" class="table-wrapper">
             <table>
@@ -198,14 +196,13 @@
 <script>
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxnEt0Ii4vBJ2FaoQFC-0EG9YNtom0oQv7XiQ_IlQHk88pOTZ3wTR4xQexEOjk7i4el/exec"; 
 
-    // Catalog maps branchId -> { name, region }
     let branchCatalog = {}; 
     let currentBranchId = "";
 
     let allHistoricalSales = []; 
     let rawSales = []; 
-    let manualHeadCounts = {}; // { branchId: { date: { hour: count } } }
-    let dailyDefaults = {};    // { branchId: { date: defaultCount } }
+    let manualHeadCounts = {}; 
+    let dailyDefaults = {};    
     
     const startHour = 0;
     const endHour = 23;
@@ -220,7 +217,85 @@
         loadDataFromSheet();
     });
 
-    // Mobile Table Toggle Logic
+    // --- PDF EXPORT LOGIC ---
+    function exportToPDF() {
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+            alert("PDF generating library is still loading. Please try again in a moment.");
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        const bData = branchCatalog[currentBranchId];
+        const selectedDate = document.getElementById('currentDate').value;
+        
+        // Document Header
+        doc.setFontSize(18);
+        doc.setTextColor(249, 115, 22); // Match theme primary
+        doc.text("Daily Sales Report", 14, 22);
+        
+        doc.setFontSize(11);
+        doc.setTextColor(51, 65, 85);
+        doc.text(`Branch: ${bData.name} (${bData.region})`, 14, 30);
+        doc.text(`Date: ${selectedDate}`, 14, 36);
+
+        const defaultHC = parseInt(document.getElementById('defaultHc').value, 10) || 0;
+        const branchHCs = manualHeadCounts[currentBranchId] || {};
+        const dayHeadCounts = branchHCs[selectedDate] || {};
+
+        let tableRows = [];
+        let grandTotalSales = 0, grandTotalTrans = 0, grandTotalHc = 0;
+
+        // Construct clean data specifically for the formal report
+        for (let h = startHour; h <= endHour; h++) {
+            const hourSales = rawSales.filter(sale => sale.hour === h);
+            const netSales = hourSales.reduce((sum, sale) => sum + sale.amount, 0);
+            const transactions = hourSales.length;
+            
+            const headCount = dayHeadCounts[h] !== undefined ? dayHeadCounts[h] : defaultHC;
+            const salesPerHead = headCount > 0 ? (netSales / headCount) : 0;
+
+            grandTotalSales += netSales;
+            grandTotalTrans += transactions;
+            grandTotalHc += headCount;
+
+            tableRows.push([
+                formatHourRange(h),
+                netSales.toFixed(2),
+                transactions.toString(),
+                headCount.toString(), // Clean integer, no '+' or '-' UI elements
+                salesPerHead.toFixed(2)
+            ]);
+        }
+
+        const footers = [[
+            'GRAND TOTAL:',
+            grandTotalSales.toFixed(2),
+            grandTotalTrans.toString(),
+            grandTotalHc.toString(),
+            ''
+        ]];
+
+        // Generate autoTable
+        doc.autoTable({
+            startY: 44,
+            head: [['Timestamp (Hourly)', 'Net Sales', 'Transactions', 'Head Counts', 'Sales Per Head']],
+            body: tableRows,
+            foot: footers,
+            theme: 'grid', // Formal spreadsheet grid look
+            headStyles: { fillColor: [249, 115, 22], textColor: 255, fontStyle: 'bold' },
+            footStyles: { fillColor: [241, 245, 249], textColor: [51, 65, 85], fontStyle: 'bold' },
+            styles: { fontSize: 10, halign: 'center', cellPadding: 4, lineColor: [226, 232, 240], lineWidth: 0.1 },
+            columnStyles: { 0: { halign: 'left' } },
+        });
+
+        // Save file locally
+        doc.save(`Sales_Report_${bData.name.replace(/[^a-zA-Z0-9]/g, '_')}_${selectedDate}.pdf`);
+    }
+
+    // --- STANDARD APP LOGIC ---
+
     function toggleTable() {
         const wrapper = document.getElementById('tableWrapper');
         const btn = document.getElementById('mobileTableToggle');
@@ -385,7 +460,6 @@
         document.getElementById('hub-view').classList.remove('hidden');
         currentBranchId = "";
         
-        // Reset mobile table view
         const wrapper = document.getElementById('tableWrapper');
         const btn = document.getElementById('mobileTableToggle');
         wrapper.classList.remove('show');
@@ -403,7 +477,7 @@
         document.getElementById('dashboardTitle').innerText = `${bData.name} - Dashboard`;
         const logsEl = document.getElementById('recentLogs');
         logsEl.innerHTML = `<em>No sales logged yet for ${bData.name}...</em>`;
-        logsEl.className = ""; // Remove any animation classes
+        logsEl.className = ""; 
         
         document.getElementById('hub-view').classList.add('hidden');
         document.getElementById('dashboard-view').classList.remove('hidden');
@@ -521,13 +595,11 @@
         allHistoricalSales.push(newSale);
         rawSales.push(newSale);
         
-        // Update Logs & Trigger Animation
         const logsEl = document.getElementById('recentLogs');
         logsEl.innerHTML = `<strong>Success:</strong> Logged ⃁${amountInput.toFixed(2)} at ${timeInput}`;
         
-        // Restart animation trick
         logsEl.classList.remove('log-success-animate');
-        void logsEl.offsetWidth; // Trigger reflow
+        void logsEl.offsetWidth; 
         logsEl.classList.add('log-success-animate');
 
         document.getElementById('saleAmount').value = '';
@@ -581,7 +653,6 @@
         sendToSheet(payload, "Headcount updated!");
     }
 
-    // Updated updateStatus to handle loading animation flag
     function updateStatus(message, isError, autoClear = false, isLoading = false) {
         const el = document.getElementById('syncStatus');
         
