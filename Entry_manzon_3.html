@@ -3,20 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Branch Hourly Net Sales</title>
+    <title>Multi-Branch Sales Management</title>
     <style>
-        :root { --primary-color: #0056b3; --border-color: #cdd6e0; --bg-color: #f8f9fa; }
+        :root { 
+            --primary-color: #0056b3; 
+            --border-color: #cdd6e0; 
+            --bg-color: #f8f9fa;
+            --danger-color: #dc3545; 
+            --success-color: #28a745;
+        }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 20px; background-color: #f0f2f5; color: #333; }
         .container { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h2 { margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; }
+        h2 { margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;}
+        
+        .hidden { display: none !important; }
+        .status-text { font-size: 0.85em; margin-left: 10px; font-weight: normal; }
+        .status-success { color: green; }
+        .status-error { color: red; }
+
+        button { background-color: var(--primary-color); color: white; border: none; padding: 9px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #004494; }
+        .btn-small { padding: 4px 8px; font-size: 1em; margin: 0 5px; width: 30px; }
+        .btn-outline { background-color: white; color: var(--primary-color); border: 2px solid var(--primary-color); }
+        .btn-outline:hover { background-color: var(--bg-color); }
+        .btn-danger { background-color: var(--danger-color); }
+        .btn-danger:hover { background-color: #bd2130; }
+        
+        /* Hub View Specifics */
+        .branch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
+        .branch-card { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; }
+        .branch-card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); border-color: var(--primary-color); }
+        .card-body { padding: 20px; cursor: pointer; text-align: center; flex-grow: 1; }
+        .card-body h3 { margin: 0 0 10px 0; color: var(--primary-color); }
+        .card-body p { margin: 0; font-size: 0.9em; color: #666; }
+        .card-actions { display: flex; background: #e9ecef; border-top: 1px solid var(--border-color); }
+        .card-actions button { flex: 1; background: transparent; color: #333; border-radius: 0; padding: 10px; font-size: 0.85em; border-right: 1px solid var(--border-color); }
+        .card-actions button:last-child { border-right: none; color: var(--danger-color); }
+        .card-actions button:hover { background: #dee2e6; color: #000; }
+
+        /* Dashboard Specifics */
         .section { background: var(--bg-color); padding: 15px; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 20px; }
         .form-row { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
         .input-group { display: flex; flex-direction: column; gap: 5px; }
         .input-group label { font-weight: 600; font-size: 0.9em; }
-        input[type="text"], input[type="number"], input[type="time"], input[type="date"] { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; }
-        button { background-color: var(--primary-color); color: white; border: none; padding: 9px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        button:hover { background-color: #004494; }
-        .btn-small { padding: 4px 8px; font-size: 1em; margin: 0 5px; width: 30px; }
+        input[type="text"], input[type="number"], input[type="date"] { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid var(--border-color); padding: 10px; text-align: center; }
         th { background-color: var(--primary-color); color: white; position: sticky; top: 0; }
@@ -24,255 +54,456 @@
         tfoot { font-weight: bold; background-color: #e9ecef; }
         .text-right { text-align: right; }
         .hc-cell { display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .hc-warning { color: var(--danger-color); font-weight: bold; } 
         #recentLogs { font-size: 0.85em; color: #666; margin-top: 10px; }
-        .status-text { font-size: 0.85em; margin-left: 10px; font-weight: normal; }
-        .status-success { color: green; }
-        .status-error { color: red; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Branch Hourly Net Sales Dashboard <span id="syncStatus" class="status-text"></span></h2>
-
-    <div class="section">
-        <div class="form-row">
-            <div class="input-group">
-                <label for="currentDate">Date</label>
-                <input type="date" id="currentDate" onchange="changeDate()">
-            </div>
-            <div class="input-group">
-                <label for="region">Region</label>
-                <input type="text" id="region" placeholder="e.g., North America">
-            </div>
-            <div class="input-group">
-                <label for="branch">Branch</label>
-                <input type="text" id="branch" placeholder="e.g., Downtown Store">
-            </div>
-            <div class="input-group">
-                <label for="defaultHc">Default Head Counts</label>
-                <input type="number" id="defaultHc" value="15" min="1" onchange="renderTable()">
-            </div>
-        </div>
+    
+    <div style="text-align: right; margin-bottom: 10px;">
+        <span id="syncStatus" class="status-text">Initializing...</span>
     </div>
 
-    <div class="section">
-        <div class="form-row">
-            <div class="input-group">
-                <label for="saleTime">Time of Sale</label>
-                <input type="time" id="saleTime" required>
-            </div>
-            <div class="input-group">
-                <label for="saleAmount">Sale Amount</label>
-                <input type="number" id="saleAmount" step="0.01" min="0" placeholder="0.00" required>
-            </div>
-            <div class="input-group" style="justify-content: flex-end;">
-                <button onclick="addSale()">Add Sale Entry</button>
-            </div>
-        </div>
-        <div id="recentLogs"><em>No sales logged yet...</em></div>
+    <!-- VIEW 1: THE HUB (Branch Directory) -->
+    <div id="hub-view">
+        <h2>
+            Branch Directory
+            <button onclick="promptNewBranch()">+ Add New Branch</button>
+        </h2>
+        <p>Select a branch to view records, or manage branch details below.</p>
+        <div class="branch-grid" id="branchGrid"></div>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Timestamp (Hourly)</th>
-                <th>Net Sales (ADS)</th>
-                <th>Transactions (ADS)</th>
-                <th>Head Counts</th>
-                <th>Sales Per Head</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-        <tfoot>
-            <tr>
-                <td class="text-right"><strong>GRAND TOTAL:</strong></td>
-                <td id="totalSales">0.00</td>
-                <td id="totalTrans">0</td>
-                <td id="totalHc">0</td>
-                <td id="totalSph">0.00</td>
-            </tr>
-        </tfoot>
-    </table>
+    <!-- VIEW 2: THE DASHBOARD (Specific Branch) -->
+    <div id="dashboard-view" class="hidden">
+        <h2>
+            <span id="dashboardTitle">Branch Name Dashboard</span>
+            <button class="btn-outline" onclick="openHub()">← Back to Hub</button>
+        </h2>
+
+        <div class="section">
+            <div class="form-row">
+                <div class="input-group">
+                    <label for="currentDate">Date</label>
+                    <input type="date" id="currentDate" onchange="changeDate()">
+                </div>
+                <div class="input-group">
+                    <label for="defaultHc">Default Head Counts</label>
+                    <input type="number" id="defaultHc" min="0" onchange="updateDefaultHc()" placeholder="Enter default">
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="form-row">
+                <div class="input-group">
+                    <label for="saleAmount">Sale Amount (⃁)</label>
+                    <input type="number" id="saleAmount" step="0.01" min="0" placeholder="0.00" required>
+                </div>
+                <div class="input-group" style="justify-content: flex-end; margin-top: auto;">
+                    <button onclick="addSale()">Add Sale Entry</button>
+                </div>
+            </div>
+            <div id="recentLogs"><em>No sales logged yet...</em></div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp (Hourly)</th>
+                    <th>Net Sales (ADS)</th>
+                    <th>Transactions (ADS)</th>
+                    <th>Head Counts</th>
+                    <th>Sales Per Head</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+            <tfoot>
+                <tr>
+                    <td class="text-right"><strong>GRAND TOTAL:</strong></td>
+                    <td id="totalSales">⃁0.00</td>
+                    <td id="totalTrans">0</td>
+                    <td id="totalHc">0</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
 </div>
 
 <script>
-    // ==========================================
-    // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL BELOW
-    // ==========================================
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwhdpCS3R7J-WaO2_Qo6p3YpDjjmxjp6xAT8-epyFltnFd_FbLHwjurJUAJe6Qxo_94/exec"; 
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxnEt0Ii4vBJ2FaoQFC-0EG9YNtom0oQv7XiQ_IlQHk88pOTZ3wTR4xQexEOjk7i4el/exec"; 
 
-    let allHistoricalSales = []; // Stores ALL rows from Google Sheet
-    let rawSales = []; // Stores only the current selected date's sales
-    let manualHeadCounts = {}; // Keyed by date: { "2026-07-20": { 8: 6 } }
+    // Catalog maps branchId -> { name, region }
+    let branchCatalog = {}; 
+    let currentBranchId = "";
+
+    let allHistoricalSales = []; 
+    let rawSales = []; 
+    let manualHeadCounts = {}; // { branchId: { date: { hour: count } } }
+    let dailyDefaults = {};    // { branchId: { date: defaultCount } }
     
-const startHour = 0;  // Starts at 12:00 AM (Midnight)
-const endHour = 23;   // Ends at 11:00 PM
+    const startHour = 0;
+    const endHour = 23;
 
     document.addEventListener("DOMContentLoaded", () => {
-        // Set today's date taking local timezone into account
         const today = new Date();
         const yyyy = today.getFullYear();
         const mm = String(today.getMonth() + 1).padStart(2, '0');
         const dd = String(today.getDate()).padStart(2, '0');
         document.getElementById('currentDate').value = `${yyyy}-${mm}-${dd}`;
-
-        const timeString = today.getHours().toString().padStart(2, '0') + ':' + today.getMinutes().toString().padStart(2, '0');
-        document.getElementById('saleTime').value = timeString;
         
         loadDataFromSheet();
     });
 
-// --- READ FROM GOOGLE SHEET (Modern Fetch) ---
     function loadDataFromSheet() {
-        const statusEl = document.getElementById('syncStatus');
-        statusEl.textContent = "Loading data from Sheet...";
-        statusEl.className = "status-text";
+        updateStatus("Loading data from Sheet...", false);
 
-        // Using standard fetch now that you are on GitHub Pages
         fetch(`${WEB_APP_URL}?t=${new Date().getTime()}`)
             .then(response => response.json())
             .then(data => {
-                console.log("🔍 RAW DATA FROM GOOGLE SHEETS:", data); // <-- THIS WILL SHOW US THE PROBLEM
                 processSheetData(data);
+                renderHub();
             })
             .catch(error => {
                 console.error("Error fetching data:", error);
-                statusEl.textContent = "✗ Load Error (Check Console)";
-                statusEl.className = "status-text status-error";
+                updateStatus("✗ Load Error (Check Console)", true);
             });
     }
 
-    function processSheetData(sheetData) {
-        document.getElementById('syncStatus').textContent = "✓ Data Loaded";
-        document.getElementById('syncStatus').className = "status-text status-success";
-        setTimeout(() => document.getElementById('syncStatus').textContent = "", 3000);
+    function normalizeDate(sheetDate) {
+        let dateVal = String(sheetDate).trim();
+        if (dateVal.includes('T')) return dateVal.split('T')[0];
+        const d = new Date(dateVal);
+        if (!isNaN(d.getTime())) {
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+        return dateVal;
+    }
+
+    function generateIdFromName(name) {
+        return 'b_' + name.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Math.floor(Math.random() * 1000);
+    }
+
+    function processSheetData(db) {
+        updateStatus("✓ Data Loaded", false, true);
 
         allHistoricalSales = []; 
-        
-        // Loop starts at 1 to skip the header row
-        for (let i = 1; i < sheetData.length; i++) {
-            const row = sheetData[i];
-            
-            // Ensure the row actually has data
-            if (!row || row.length < 6 || !row[0]) continue;
+        manualHeadCounts = {};
+        dailyDefaults = {}; 
+        branchCatalog = {}; 
 
-            try {
-                // 1. DATE NORMALIZATION
-                let dateVal = String(row[0]).trim();
-                if (dateVal.includes('T')) {
-                    // Handle ISO strings (e.g. 2026-07-20T14:30:00.000Z)
-                    dateVal = dateVal.split('T')[0];
-                } else {
-                    const d = new Date(dateVal);
-                    if (!isNaN(d.getTime())) {
-                        const yyyy = d.getFullYear();
-                        const mm = String(d.getMonth() + 1).padStart(2, '0');
-                        const dd = String(d.getDate()).padStart(2, '0');
-                        dateVal = `${yyyy}-${mm}-${dd}`;
-                    }
-                }
+        // Helper to register branches dynamically
+        function registerBranch(bName, rName, bId) {
+            let id = bId ? String(bId).trim() : "";
+            // If no ID found in sheet row, generate a consistent lookup slug based on name
+            if (!id || id === "undefined" || id === "null") {
+                id = "legacy_" + bName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+            }
+            if (!branchCatalog[id]) {
+                branchCatalog[id] = { name: bName, region: rName };
+            }
+            return id;
+        }
 
-                // 2. TIME NORMALIZATION
+        // 1. Process SALES Tab (Expected Columns: Date, Region, Branch, Hour Block, Time, Amount, Branch ID [index 6])
+        if (db.sales && db.sales.length > 0) {
+            for (let i = 1; i < db.sales.length; i++) {
+                const row = db.sales[i];
+                if (!row || row.length < 6 || !row[0]) continue;
+
+                let dateVal = normalizeDate(row[0]);
+                let regionVal = String(row[1]).trim() || "Unassigned";
+                let branchVal = String(row[2]).trim() || "Unassigned";
+                let bId = row[6] ? row[6] : null;
+
+                let finalId = registerBranch(branchVal, regionVal, bId);
+
                 const timeVal = String(row[4]).trim();
-                let hour;
+                let hour = parseInt(timeVal.split(':')[0], 10);
+                if (timeVal.toUpperCase().includes('PM') && hour !== 12) hour += 12;
+                if (timeVal.toUpperCase().includes('AM') && hour === 12) hour = 0;
                 
-                if (timeVal.includes('T')) {
-                    // If Google sent a full timestamp
-                    hour = new Date(timeVal).getHours();
-                } else {
-                    // If Google sent text like "14:30" or "02:30 PM"
-                    hour = parseInt(timeVal.split(':')[0], 10);
-                    if (timeVal.toUpperCase().includes('PM') && hour !== 12) hour += 12;
-                    if (timeVal.toUpperCase().includes('AM') && hour === 12) hour = 0;
-                }
-
-                // 3. AMOUNT NORMALIZATION
                 const amountVal = parseFloat(String(row[5]).replace(/[^0-9.-]+/g,"")); 
                 
-                // Only push if we successfully parsed the date, time, and amount
                 if (dateVal && !isNaN(hour) && !isNaN(amountVal)) {
                     allHistoricalSales.push({
                         date: dateVal,
-                        region: String(row[1] || ""),
-                        branch: String(row[2] || ""),
+                        branchId: finalId,
                         hour: hour,
                         time: timeVal,
                         amount: amountVal
                     });
-                } else {
-                    console.warn("⚠️ Skipped invalid row:", row);
                 }
-            } catch (err) {
-                console.error("Error processing row:", row, err);
             }
         }
-        
-        changeDate(); // Triggers the filter & render process
+
+        // 2. Process HEADCOUNTS Tab (Expected Columns: Date, Region, Branch, Hour Block, Headcount, Branch ID [index 5])
+        if (db.headcounts && db.headcounts.length > 0) {
+            for (let i = 1; i < db.headcounts.length; i++) {
+                const row = db.headcounts[i];
+                if (!row || row.length < 5 || !row[0]) continue;
+
+                let dateVal = normalizeDate(row[0]);
+                let regionVal = String(row[1]).trim() || "Unassigned";
+                let branchVal = String(row[2]).trim() || "Unassigned";
+                let bId = row[5] ? row[5] : null;
+
+                let finalId = registerBranch(branchVal, regionVal, bId);
+
+                let hourRaw = String(row[3]).trim();
+                const hc = parseInt(row[4], 10);
+
+                if (dateVal && !isNaN(hc)) {
+                    if (!dailyDefaults[finalId]) dailyDefaults[finalId] = {};
+                    if (!manualHeadCounts[finalId]) manualHeadCounts[finalId] = {};
+                    if (!manualHeadCounts[finalId][dateVal]) manualHeadCounts[finalId][dateVal] = {};
+
+                    if (hourRaw === "DEFAULT") {
+                        dailyDefaults[finalId][dateVal] = hc;
+                    } else {
+                        const hr = parseInt(hourRaw, 10);
+                        if (!isNaN(hr)) {
+                            manualHeadCounts[finalId][dateVal][hr] = hc; 
+                        }
+                    }
+                }
+            }
+        }
     }
+
+    // --- HUB & NAVIGATION ---
+    
+    function renderHub() {
+        const grid = document.getElementById('branchGrid');
+        grid.innerHTML = '';
+        
+        const bIds = Object.keys(branchCatalog);
+        
+        if (bIds.length === 0) {
+            grid.innerHTML = '<p>No branches found. Click "+ Add New Branch" to start.</p>';
+        } else {
+            bIds.sort((a,b) => branchCatalog[a].name.localeCompare(branchCatalog[b].name)).forEach(bId => {
+                const bData = branchCatalog[bId];
+                const card = document.createElement('div');
+                card.className = 'branch-card';
+                card.innerHTML = `
+                    <div class="card-body" onclick="openDashboard('${bId}')">
+                        <h3>${bData.name}</h3>
+                        <p>${bData.region}</p>
+                    </div>
+                    <div class="card-actions">
+                        <button onclick="editBranch('${bId}')">Edit</button>
+                        <button class="btn-danger" onclick="deleteBranch('${bId}')">Delete</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+    }
+
+    function openHub() {
+        document.getElementById('dashboard-view').classList.add('hidden');
+        document.getElementById('hub-view').classList.remove('hidden');
+        currentBranchId = "";
+        loadDataFromSheet(); // Re-fetch to ensure clean state
+    }
+
+    function openDashboard(bId) {
+        currentBranchId = bId;
+        const bData = branchCatalog[bId];
+        
+        document.getElementById('dashboardTitle').innerText = `${bData.name} - Net Sales Dashboard`;
+        document.getElementById('recentLogs').innerHTML = `<em>No sales logged yet for ${bData.name}...</em>`;
+        
+        document.getElementById('hub-view').classList.add('hidden');
+        document.getElementById('dashboard-view').classList.remove('hidden');
+        
+        changeDate(); 
+    }
+
+    function promptNewBranch() {
+        const bName = prompt("Enter the Name of the new Branch (e.g., Downtown Store):");
+        if (!bName) return;
+        const rName = prompt("Enter the Region for this Branch (e.g., North America):") || "Unassigned Region";
+        
+        const newId = generateIdFromName(bName);
+        branchCatalog[newId] = { name: bName, region: rName };
+        
+        openDashboard(newId);
+    }
+
+    function editBranch(bId) {
+        const bData = branchCatalog[bId];
+        const newName = prompt("Edit Branch Name:", bData.name);
+        if (!newName) return;
+        const newRegion = prompt("Edit Region:", bData.region) || "Unassigned Region";
+
+        // Update locally
+        branchCatalog[bId].name = newName;
+        branchCatalog[bId].region = newRegion;
+        renderHub();
+
+        // Send edit command to Google Sheet using Branch ID
+        const payload = {
+            action: "edit_branch",
+            branchId: bId,
+            newName: newName,
+            newRegion: newRegion
+        };
+        sendToSheet(payload, "Branch updated successfully!");
+    }
+
+    function deleteBranch(bId) {
+        const bData = branchCatalog[bId];
+        if (!confirm(`Are you sure you want to PERMANENTLY delete "${bData.name}" and all its sales records from the database?`)) {
+            return;
+        }
+
+        // Remove locally
+        delete branchCatalog[bId];
+        renderHub();
+
+        // Send delete command to Google Sheet using Branch ID
+        const payload = {
+            action: "delete_branch",
+            branchId: bId
+        };
+        sendToSheet(payload, "Branch deleted from database.");
+    }
+
+    // --- DASHBOARD LOGIC ---
+
     function changeDate() {
         const selectedDate = document.getElementById('currentDate').value;
         
-        // Filter master array for only the selected date
-        rawSales = allHistoricalSales.filter(sale => sale.date === selectedDate);
+        rawSales = allHistoricalSales.filter(sale => sale.date === selectedDate && sale.branchId === currentBranchId);
         
-        // Auto-fill Region/Branch from latest data if available
-        if (rawSales.length > 0) {
-            const latest = rawSales[rawSales.length - 1];
-            if(latest.region) document.getElementById('region').value = latest.region;
-            if(latest.branch) document.getElementById('branch').value = latest.branch;
+        if (dailyDefaults[currentBranchId] && dailyDefaults[currentBranchId][selectedDate] !== undefined) {
+            document.getElementById('defaultHc').value = dailyDefaults[currentBranchId][selectedDate];
+        } else {
+            document.getElementById('defaultHc').value = ''; 
         }
 
+        renderTable();
+    }
+
+    function updateDefaultHc() {
+        const selectedDate = document.getElementById('currentDate').value;
+        const defaultHcVal = parseInt(document.getElementById('defaultHc').value, 10);
+        const bData = branchCatalog[currentBranchId];
+        
+        if (!isNaN(defaultHcVal)) {
+            if (!dailyDefaults[currentBranchId]) dailyDefaults[currentBranchId] = {};
+            dailyDefaults[currentBranchId][selectedDate] = defaultHcVal; 
+            
+            const payload = {
+                action: "headcount",
+                branchId: currentBranchId,
+                date: selectedDate,
+                region: bData.region,
+                branch: bData.name,
+                hour: "DEFAULT", 
+                headcount: defaultHcVal
+            };
+            sendToSheet(payload, "Default Headcount saved!");
+        }
+        
         renderTable();
     }
 
     function addSale() {
         const selectedDate = document.getElementById('currentDate').value;
-        const timeInput = document.getElementById('saleTime').value;
+        const now = new Date();
+        const timeInput = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
         const amountInput = parseFloat(document.getElementById('saleAmount').value);
-        const regionInput = document.getElementById('region').value || "N/A";
-        const branchInput = document.getElementById('branch').value || "N/A";
+        const bData = branchCatalog[currentBranchId];
 
-        if (!selectedDate || !timeInput || isNaN(amountInput)) {
-            alert("Please ensure Date, Time, and Amount are filled correctly.");
+        if (!selectedDate || isNaN(amountInput)) {
+            alert("Please ensure Date and Sale Amount are filled correctly.");
             return;
         }
 
-        const hour = parseInt(timeInput.split(':')[0], 10);
+        const hour = now.getHours();
         const hourBlock = formatHourRange(hour);
 
-        const newSale = {
-            date: selectedDate,
-            region: regionInput,
-            branch: branchInput,
-            hour: hour,
-            time: timeInput,
-            amount: amountInput
+        const newSale = { 
+            date: selectedDate, 
+            branchId: currentBranchId, 
+            hour: hour, 
+            time: timeInput, 
+            amount: amountInput 
         };
 
-        // Update local arrays instantly
         allHistoricalSales.push(newSale);
         rawSales.push(newSale);
         
-        document.getElementById('recentLogs').innerHTML = `<em>Last entry logged: ${amountInput.toFixed(2)} at ${timeInput} on ${selectedDate}</em>`;
+        document.getElementById('recentLogs').innerHTML = `<em>Last entry logged: ⃁${amountInput.toFixed(2)} at ${timeInput}</em>`;
         document.getElementById('saleAmount').value = '';
         document.getElementById('saleAmount').focus();
         
         renderTable();
 
-        // Send to Google Sheets
         const payload = {
+            action: "sale",
+            branchId: currentBranchId,
             date: selectedDate,
-            region: regionInput,
-            branch: branchInput,
+            region: bData.region,
+            branch: bData.name,
             hourBlock: hourBlock,
             time: timeInput,
             amount: amountInput
         };
 
-        const statusEl = document.getElementById('syncStatus');
-        statusEl.textContent = "Syncing to sheet...";
-        statusEl.className = "status-text";
+        sendToSheet(payload, "Sale logged!");
+    }
+
+    function adjustHC(hour, delta) {
+        const selectedDate = document.getElementById('currentDate').value;
+        const defaultHC = parseInt(document.getElementById('defaultHc').value, 10) || 0; 
+        const bData = branchCatalog[currentBranchId];
+        
+        if (!manualHeadCounts[currentBranchId]) manualHeadCounts[currentBranchId] = {};
+        if (!manualHeadCounts[currentBranchId][selectedDate]) manualHeadCounts[currentBranchId][selectedDate] = {};
+        
+        if (manualHeadCounts[currentBranchId][selectedDate][hour] === undefined) { 
+            manualHeadCounts[currentBranchId][selectedDate][hour] = defaultHC; 
+        }
+        
+        manualHeadCounts[currentBranchId][selectedDate][hour] += delta;
+        if (manualHeadCounts[currentBranchId][selectedDate][hour] < 0) { 
+            manualHeadCounts[currentBranchId][selectedDate][hour] = 0; 
+        }
+
+        if (delta > 0 && manualHeadCounts[currentBranchId][selectedDate][hour] > defaultHC) {
+            alert(`WARNING: This hour's Head Count (${manualHeadCounts[currentBranchId][selectedDate][hour]}) is now higher than your Default Head Count (${defaultHC}).`);
+        }
+        
+        renderTable();
+
+        const payload = {
+            action: "headcount",
+            branchId: currentBranchId,
+            date: selectedDate,
+            region: bData.region,
+            branch: bData.name,
+            hour: hour,
+            headcount: manualHeadCounts[currentBranchId][selectedDate][hour]
+        };
+
+        sendToSheet(payload, "Headcount updated!");
+    }
+
+    // --- HELPERS ---
+
+    function sendToSheet(payload, successMessage) {
+        updateStatus("Syncing to sheet...", false);
 
         fetch(WEB_APP_URL, {
             method: 'POST',
@@ -280,33 +511,18 @@ const endHour = 23;   // Ends at 11:00 PM
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         }).then(() => {
-            statusEl.textContent = "✓ Saved to Sheet";
-            statusEl.className = "status-text status-success";
-            setTimeout(() => statusEl.textContent = "", 3000);
+            updateStatus("✓ " + successMessage, false, true);
         }).catch(err => {
             console.error(err);
-            statusEl.textContent = "✗ Connection Error";
-            statusEl.className = "status-text status-error";
+            updateStatus("✗ Connection Error", true);
         });
     }
 
-    function adjustHC(hour, delta) {
-        const selectedDate = document.getElementById('currentDate').value;
-        const defaultHC = parseInt(document.getElementById('defaultHc').value, 10) || 1;
-        
-        if (!manualHeadCounts[selectedDate]) {
-            manualHeadCounts[selectedDate] = {};
-        }
-        if (manualHeadCounts[selectedDate][hour] === undefined) { 
-            manualHeadCounts[selectedDate][hour] = defaultHC; 
-        }
-        
-        manualHeadCounts[selectedDate][hour] += delta;
-        if (manualHeadCounts[selectedDate][hour] < 1) { 
-            manualHeadCounts[selectedDate][hour] = 1; 
-        }
-        
-        renderTable();
+    function updateStatus(message, isError, autoClear = false) {
+        const el = document.getElementById('syncStatus');
+        el.textContent = message;
+        el.className = "status-text " + (isError ? "status-error" : (autoClear ? "status-success" : ""));
+        if (autoClear) setTimeout(() => el.textContent = "", 3000);
     }
 
     function formatHourRange(hour) {
@@ -324,8 +540,10 @@ const endHour = 23;   // Ends at 11:00 PM
         tbody.innerHTML = '';
         
         const selectedDate = document.getElementById('currentDate').value;
-        const defaultHC = parseInt(document.getElementById('defaultHc').value, 10) || 1;
-        const dayHeadCounts = manualHeadCounts[selectedDate] || {};
+        const defaultHC = parseInt(document.getElementById('defaultHc').value, 10) || 0;
+        
+        const branchHCs = manualHeadCounts[currentBranchId] || {};
+        const dayHeadCounts = branchHCs[selectedDate] || {};
 
         let grandTotalSales = 0, grandTotalTrans = 0, grandTotalHc = 0;
 
@@ -334,9 +552,10 @@ const endHour = 23;   // Ends at 11:00 PM
             const netSales = hourSales.reduce((sum, sale) => sum + sale.amount, 0);
             const transactions = hourSales.length;
             
-            // Pull headcount from current date object, otherwise default
             const headCount = dayHeadCounts[h] !== undefined ? dayHeadCounts[h] : defaultHC;
             const salesPerHead = headCount > 0 ? (netSales / headCount) : 0;
+
+            const textStyleClass = headCount > defaultHC ? 'hc-warning' : '';
 
             grandTotalSales += netSales;
             grandTotalTrans += transactions;
@@ -345,25 +564,23 @@ const endHour = 23;   // Ends at 11:00 PM
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${formatHourRange(h)}</td>
-                <td>${netSales.toFixed(2)}</td>
+                <td>⃁${netSales.toFixed(2)}</td>
                 <td>${transactions}</td>
                 <td>
                     <div class="hc-cell">
                         <button class="btn-small" onclick="adjustHC(${h}, -1)">-</button>
-                        <span>${headCount}</span>
+                        <span class="${textStyleClass}">${headCount}</span>
                         <button class="btn-small" onclick="adjustHC(${h}, 1)">+</button>
                     </div>
                 </td>
-                <td>${salesPerHead.toFixed(2)}</td>
+                <td>⃁${salesPerHead.toFixed(2)}</td>
             `;
             tbody.appendChild(tr);
         }
 
-        const overallSph = grandTotalHc > 0 ? (grandTotalSales / grandTotalHc) : 0;
-        document.getElementById('totalSales').innerText = grandTotalSales.toFixed(2);
+        document.getElementById('totalSales').innerText = `⃁${grandTotalSales.toFixed(2)}`;
         document.getElementById('totalTrans').innerText = grandTotalTrans;
         document.getElementById('totalHc').innerText = grandTotalHc;
-        document.getElementById('totalSph').innerText = overallSph.toFixed(2);
     }
 </script>
 
