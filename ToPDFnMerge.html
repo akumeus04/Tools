@@ -498,23 +498,41 @@
     const mergeBtn = document.getElementById('mergeBtn');
     const mergeStatus = document.getElementById('mergeStatus');
 
-    setupDropZone('mergeDropZone', 'mergeInput', files => {
+setupDropZone('mergeDropZone', 'mergeInput', files => {
         mergeStatus.innerHTML = '';
         Array.from(files).forEach(file => {
             if (file.type === 'application/pdf') mergeFiles.push(file);
             else alert(`Unsupported: ${file.name}. Use PDFs only.`);
         });
+        
+        // --- NEW SIZE CHECKER LOGIC ---
+        // 10MB in bytes is 10 * 1024 * 1024 (10,485,760 bytes)
+        const tenMB = 10 * 1024 * 1024;
+        const hasLargeFile = mergeFiles.some(file => file.size > tenMB);
+        
+        if (hasLargeFile && mergeFiles.length > 1) {
+            alert("Warning: You have included a file larger than 10MB alongside other files. Processing this in the browser may cause memory issues or crashes. Proceed with caution or merge in smaller batches.");
+        }
+        // ------------------------------
+
         renderMergeList();
     });
 
-    function renderMergeList() {
+function renderMergeList() {
         mergeListEl.innerHTML = '';
         mergeFiles.forEach((file, idx) => {
+            // --- NEW: Calculate and format file size ---
+            const kb = file.size / 1024;
+            const sizeStr = kb > 1024 ? `${(kb / 1024).toFixed(2)} MB` : `${kb.toFixed(1)} KB`;
+            // -------------------------------------------
+
             const li = document.createElement('li');
             li.className = 'file-item draggable-item';
             li.setAttribute('draggable', true);
             li.setAttribute('data-index', idx);
-            li.innerHTML = `<span><span style="color:#888; margin-right:8px">☰</span> ${file.name}</span> <button class="remove-btn" onclick="removeMergeFile(${idx})">✕</button>`;
+            
+            // --- UPDATED: Added sizeStr to the innerHTML ---
+            li.innerHTML = `<span><span style="color:#888; margin-right:8px">☰</span> ${file.name} <span style="color:#6B7280; font-size:11px; margin-left:6px;">(${sizeStr})</span></span> <button class="remove-btn" onclick="removeMergeFile(${idx})">✕</button>`;
             
             li.addEventListener('dragstart', function(e) {
                 dragStartIndex = +this.getAttribute('data-index');
