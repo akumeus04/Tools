@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" href="bell-192.png">
 
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    
+
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -39,20 +39,17 @@
             --shadow-md: 0 4px 16px rgba(15,23,42,0.08);
             --shadow-lg: 0 16px 40px rgba(15,23,42,0.14);
             --shadow-violet: 0 8px 24px rgba(124,58,237,0.28);
+            --sidebar-w: 264px;
         }
 
+        html, body { height: 100%; }
         body {
             font-family: 'Inter', sans-serif;
             background: #F0F4FF;
             min-height: 100vh;
-            display: flex; align-items: flex-start; justify-content: center;
-            padding: 0 0 80px;
         }
 
-        .container {
-            width: 100%; max-width: 480px;
-            display: none; /* shown after login */
-        }
+        button, input, select, textarea { font: inherit; }
 
         /* ══ LOGIN SCREEN ══ */
         .login-overlay {
@@ -111,20 +108,25 @@
         .btn-login:hover:not(:disabled) { opacity: 0.92; transform: translateY(-1px); }
         .btn-login:disabled { opacity: 0.65; cursor: not-allowed; }
 
-        /* ══ APP HEADER ══ */
-        .app-header {
+        /* ══════════════════════════════════════════════
+           APP SHELL — mobile-first, desktop sidebar added via media query
+           ══════════════════════════════════════════════ */
+        .app-shell { display: none; min-height: 100vh; }
+        .app-shell.visible { display: block; }
+
+        /* ── MOBILE HEADER (shown < 900px) ── */
+        .mobile-header {
             background: linear-gradient(135deg, var(--indigo) 0%, var(--violet) 100%);
             padding: 48px 24px 72px;
             position: relative; overflow: hidden;
         }
-        /* decorative circles */
-        .app-header::before, .app-header::after {
+        .mobile-header::before, .mobile-header::after {
             content: ''; position: absolute; border-radius: 50%;
             background: rgba(255,255,255,0.07);
         }
-        .app-header::before { width: 220px; height: 220px; top: -60px; right: -50px; }
-        .app-header::after  { width: 140px; height: 140px; bottom: -40px; left: -30px; }
-        .header-inner { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; }
+        .mobile-header::before { width: 220px; height: 220px; top: -60px; right: -50px; }
+        .mobile-header::after  { width: 140px; height: 140px; bottom: -40px; left: -30px; }
+        .header-inner { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; max-width: 480px; margin: 0 auto; }
         .header-brand { display: flex; align-items: center; gap: 12px; }
         .header-icon {
             width: 44px; height: 44px; border-radius: 14px;
@@ -144,10 +146,8 @@
         }
         .btn-logout:hover { background: rgba(255,255,255,0.25); }
 
-        /* ══ CONTENT AREA (overlaps header) ══ */
-        .content-area { padding: 0 16px; margin-top: -48px; position: relative; z-index: 2; }
-
-        /* ══ TABS ══ */
+        /* ── MOBILE TABS (shown < 900px) ── */
+        .mobile-tabs-wrap { max-width: 480px; margin: -48px auto 0; padding: 0 16px; position: relative; z-index: 2; }
         .tabs {
             display: flex; gap: 5px;
             background: #fff; border-radius: 16px; padding: 5px;
@@ -166,6 +166,57 @@
             background: rgba(255,255,255,0.25); color: #fff;
         }
         .tab:not(.active) .tab-badge { background: var(--indigo-md); color: var(--indigo); }
+
+        /* ── DESKTOP SIDEBAR (shown >= 900px) ── */
+        .sidebar {
+            display: none;
+            width: var(--sidebar-w); flex-shrink: 0;
+            background: linear-gradient(180deg, #2C1F7A 0%, #4F1D8A 100%);
+            position: fixed; top: 0; left: 0; bottom: 0;
+            padding: 28px 20px; flex-direction: column;
+        }
+        .sidebar-brand { display: flex; align-items: center; gap: 12px; padding: 0 4px 32px; }
+        .sidebar-brand .header-icon { background: rgba(255,255,255,0.14); }
+        .sidebar-brand .header-title { font-size: 1.2rem; }
+        .sidebar-brand .header-sub { color: rgba(255,255,255,0.55); }
+
+        .sidebar-nav { display: flex; flex-direction: column; gap: 4px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 14px; border-radius: 12px; border: none;
+            background: transparent; color: rgba(255,255,255,0.72);
+            font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600;
+            cursor: pointer; text-align: left; width: 100%;
+            transition: background 0.15s, color 0.15s;
+        }
+        .nav-item .nav-icon { font-size: 1.05rem; width: 22px; text-align: center; }
+        .nav-item .nav-label { flex: 1; }
+        .nav-item .tab-badge { background: rgba(255,255,255,0.16); color: #fff; }
+        .nav-item:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .nav-item.active { background: rgba(255,255,255,0.14); color: #fff; }
+        .nav-item.active .tab-badge { background: #fff; color: var(--violet); }
+
+        .sidebar-divider { height: 1px; background: rgba(255,255,255,0.12); margin: 18px 4px; }
+
+        .sidebar-cats { display: flex; flex-direction: column; gap: 2px; }
+        .sidebar-cat-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); padding: 0 14px 8px; }
+
+        .sidebar-footer { margin-top: auto; padding-top: 16px; }
+        .btn-signout-side {
+            display: flex; align-items: center; gap: 10px; width: 100%;
+            padding: 12px 14px; border-radius: 12px; border: none;
+            background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85);
+            font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 600;
+            cursor: pointer; transition: background 0.15s;
+        }
+        .btn-signout-side:hover { background: rgba(255,255,255,0.16); }
+
+        /* ── MAIN COLUMN ── */
+        .main-col { }
+        .desktop-topbar { display: none; }
+
+        /* ══ CONTENT AREA ══ */
+        .content-area { padding: 0 16px 40px; position: relative; z-index: 2; max-width: 480px; margin: 0 auto; }
 
         /* ══ CARD ══ */
         .card {
@@ -199,7 +250,7 @@
 
         /* ══ CATEGORY STRIP ══ */
         .section-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--slate-400); margin-bottom: 10px; }
-        .category-strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; margin-bottom: 16px; }
+        .category-strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; margin-bottom: 16px; flex-wrap: wrap; }
         .category-strip::-webkit-scrollbar { display: none; }
         .cat-btn {
             display: flex; flex-direction: column; align-items: center; gap: 5px;
@@ -213,7 +264,6 @@
         .cat-btn .cat-icon { font-size: 1.4rem; line-height: 1; }
         .cat-btn:hover { border-color: #C4B5FD; background: #F5F3FF; }
         .cat-btn.active { border-color: var(--indigo); background: var(--indigo-md); color: var(--indigo); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
-        /* Edit modal cats: icon-only style */
         #editModalCats .cat-btn { padding: 10px 14px; }
 
         /* ══ SUBMIT BUTTON ══ */
@@ -230,6 +280,17 @@
         .btn-submit:active { transform: scale(0.98); }
         .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
+        .btn-new-desktop {
+            display: none; align-items: center; gap: 8px;
+            padding: 11px 20px;
+            background: linear-gradient(135deg, var(--indigo), var(--violet));
+            color: #fff; border: none; border-radius: var(--radius-sm);
+            font-family: 'Poppins', sans-serif; font-size: 0.88rem; font-weight: 600;
+            cursor: pointer; box-shadow: 0 6px 18px rgba(79,70,229,0.24);
+            transition: opacity 0.2s, transform 0.15s;
+        }
+        .btn-new-desktop:hover { opacity: 0.92; transform: translateY(-1px); }
+
         /* ══ CLOUD STATUS ══ */
         .cloud-status {
             font-size: 0.75rem; font-weight: 600; padding: 8px 12px;
@@ -244,11 +305,12 @@
         .chip {
             padding: 7px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
             background: var(--slate-100); color: var(--slate-600); cursor: pointer; white-space: nowrap;
-            border: 1.5px solid transparent; transition: all 0.15s;
+            border: 1.5px solid transparent; transition: all 0.15s; flex-shrink: 0;
         }
         .chip.active { background: var(--slate-900); color: #fff; border-color: var(--slate-900); }
 
         /* ══ REMINDER ITEMS ══ */
+        #remindersList { display: flex; flex-direction: column; }
         .reminder-item {
             background: #fff; border-radius: var(--radius-md); padding: 14px 16px;
             margin-bottom: 10px; box-shadow: var(--shadow-sm);
@@ -257,21 +319,31 @@
             transition: transform 0.18s, box-shadow 0.18s;
         }
         .reminder-item:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+        /* Highlight Classes */
         .reminder-item.status-done { border-left-color: var(--green); opacity: 0.65; }
-        .reminder-item-top { display: flex; justify-content: space-between; align-items: flex-start; }
-        .reminder-item-left { display: flex; gap: 12px; align-items: flex-start; }
+        .reminder-item.approaching { border-left-color: var(--amber); background-color: #FFFBEB; }
+        .reminder-item.overdue { border-left-color: var(--red); background-color: #FEF2F2; }
+
+        .reminder-item-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; height: 100%; }
+        .reminder-item-left { display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
         .reminder-cat-icon {
             width: 42px; height: 42px; background: var(--indigo-lt);
             border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;
             flex-shrink: 0;
         }
-        .reminder-title { font-weight: 700; color: var(--slate-900); font-size: 0.95rem; margin-bottom: 3px; }
+        .reminder-title { font-weight: 700; color: var(--slate-900); font-size: 0.95rem; margin-bottom: 3px; overflow-wrap: anywhere; }
         .reminder-meta  { font-size: 0.78rem; color: var(--slate-400); font-weight: 500; margin-bottom: 8px; }
         .reminder-badges { display: flex; flex-wrap: wrap; gap: 5px; }
+
+        /* Badge Styles */
         .r-badge { font-size: 0.68rem; font-weight: 600; padding: 3px 8px; border-radius: 6px; background: var(--slate-100); color: var(--slate-600); }
         .r-badge.freq { background: var(--indigo-md); color: var(--indigo); }
         .r-badge.loc  { background: #FEF3C7; color: #D97706; }
         .r-badge.done { background: #D1FAE5; color: #059669; }
+        .r-badge.approaching { background: #FDE68A; color: #D97706; }
+        .r-badge.overdue { background: #FECACA; color: #DC2626; }
+
         .item-actions { display: flex; gap: 7px; flex-shrink: 0; }
         .icon-btn {
             width: 34px; height: 34px; border-radius: 10px; border: none;
@@ -284,7 +356,7 @@
         .icon-btn.del:hover  { background: #FECACA; }
 
         /* ══ EMPTY STATE ══ */
-        .empty-state { text-align: center; padding: 40px 20px; color: var(--slate-400); }
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--slate-400); grid-column: 1 / -1; }
         .empty-icon { font-size: 3.2rem; margin-bottom: 12px; opacity: 0.5; }
         .empty-state p { font-size: 0.88rem; }
 
@@ -315,7 +387,6 @@
         }
         .btn-close:hover { background: var(--slate-200); }
 
-        /* detail rows in view modal */
         .detail-row {
             display: flex; gap: 12px; align-items: flex-start;
             padding: 10px 0; border-bottom: 1px solid var(--slate-100);
@@ -325,7 +396,6 @@
         .detail-key { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate-400); }
         .detail-val { font-size: 0.9rem; font-weight: 500; color: var(--slate-800); margin-top: 2px; }
 
-        /* Delete modal */
         .delete-body { text-align: center; padding: 8px 0; }
         .delete-body .del-icon { font-size: 3rem; margin-bottom: 12px; }
         .delete-body h3 { font-family: 'Poppins', sans-serif; font-size: 1.1rem; color: var(--slate-900); margin-bottom: 8px; }
@@ -358,6 +428,49 @@
             white-space: nowrap;
         }
         .toast.show { bottom: 32px; }
+
+        /* ══════════════════════════════════════════════
+           DESKTOP LAYOUT  (>= 900px)
+           ══════════════════════════════════════════════ */
+        @media (min-width: 900px) {
+            .mobile-header, .mobile-tabs-wrap { display: none; }
+
+            .app-shell.visible { display: flex; }
+            .sidebar { display: flex; }
+            .main-col { flex: 1; margin-left: var(--sidebar-w); min-height: 100vh; display: flex; flex-direction: column; }
+
+            .desktop-topbar {
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 32px 40px 0; max-width: 1180px; width: 100%; margin: 0 auto;
+            }
+            .desktop-topbar h1 {
+                font-family: 'Poppins', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--slate-900);
+            }
+            .desktop-topbar .topbar-sub { font-size: 0.85rem; color: var(--slate-400); margin-top: 2px; }
+            .btn-new-desktop { display: flex; }
+
+            .content-area { max-width: 1180px; padding: 24px 40px 60px; margin: 0 auto; }
+
+            /* Create panel: centered card, roomier */
+            #createPanel .card { max-width: 640px; margin: 0 auto; padding: 32px; }
+
+            /* List panel: responsive grid */
+            #listPanel .filters { margin-bottom: 22px; }
+            #remindersList.grid-view {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+                gap: 14px;
+            }
+            #remindersList.grid-view .reminder-item { margin-bottom: 0; height: 100%; }
+            #remindersList.grid-view .reminder-item-top { flex-direction: column; }
+            #remindersList.grid-view .item-actions { margin-top: 12px; align-self: flex-end; }
+
+            .cloud-status { max-width: 420px; }
+        }
+
+        @media (min-width: 1280px) {
+            :root { --sidebar-w: 280px; }
+        }
     </style>
 </head>
 <body>
@@ -378,123 +491,177 @@
 </div>
 
 <!-- ══ MAIN APP ══ -->
-<div class="container" id="mainContainer">
+<div class="app-shell" id="appShell">
 
-    <!-- Header -->
-    <div class="app-header">
-        <div class="header-inner">
-            <div class="header-brand">
-                <div class="header-icon">🔔</div>
-                <div>
-                    <div class="header-title">Reminders</div>
-                    <div class="header-sub">Stay on top of everything</div>
-                </div>
+    <!-- ── DESKTOP SIDEBAR ── -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="header-icon">🔔</div>
+            <div>
+                <div class="header-title">Reminders</div>
+                <div class="header-sub">Stay on top of everything</div>
             </div>
-            <button class="btn-logout" onclick="window.logout()" title="Sign Out">🚪</button>
-        </div>
-    </div>
-
-    <div class="content-area">
-
-        <!-- Tabs -->
-        <div class="tabs">
-            <button class="tab" id="tabList" onclick="window.switchTab('list')">
-                📋 My Reminders <span class="tab-badge" id="reminderCount">0</span>
-            </button>
-            <button class="tab active" id="tabCreate" onclick="window.switchTab('create')">
-                ➕ New Reminder
-            </button>
         </div>
 
-        <!-- Cloud status -->
-        <div id="cloudStatus"></div>
+        <nav class="sidebar-nav">
+            <button class="nav-item active" id="navList" data-tab="list" onclick="window.switchTab('list')">
+                <span class="nav-icon">📋</span>
+                <span class="nav-label">My Reminders</span>
+                <span class="tab-badge" id="reminderCountDesktop">0</span>
+            </button>
+            <button class="nav-item" id="navCreate" data-tab="create" onclick="window.switchTab('create')">
+                <span class="nav-icon">➕</span>
+                <span class="nav-label">New Reminder</span>
+            </button>
+        </nav>
 
-        <!-- ── CREATE PANEL ── -->
-        <div id="createPanel">
-            <div class="card">
-                <div class="card-title">✏️ Create Reminder</div>
+        <div class="sidebar-footer">
+            <button class="btn-signout-side" onclick="window.logout()">
+                <span>🚪</span><span>Sign Out</span>
+            </button>
+        </div>
+    </aside>
 
-                <div class="form-group">
-                    <label>Title</label>
-                    <input type="text" id="title" class="form-control" placeholder="What should we remind you about?">
-                </div>
+    <div class="main-col">
 
-                <div class="section-label">Category</div>
-                <input type="hidden" id="category" value="medicine">
-                <div class="category-strip">
-                    <button class="cat-btn active" data-value="medicine" onclick="window.selectCategory(this,'category')">
-                        <span class="cat-icon">💊</span>Medicine
-                    </button>
-                    <button class="cat-btn" data-value="birthday" onclick="window.selectCategory(this,'category')">
-                        <span class="cat-icon">🎂</span>Birthday
-                    </button>
-                    <button class="cat-btn" data-value="event" onclick="window.selectCategory(this,'category')">
-                        <span class="cat-icon">📅</span>Event
-                    </button>
-                    <button class="cat-btn" data-value="note" onclick="window.selectCategory(this,'category')">
-                        <span class="cat-icon">📝</span>Note
-                    </button>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>📆 Date</label>
-                        <input type="date" id="date" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label>⏰ Time</label>
-                        <input type="time" id="time" class="form-control">
+        <!-- ── MOBILE HEADER (hidden on desktop) ── -->
+        <div class="mobile-header">
+            <div class="header-inner">
+                <div class="header-brand">
+                    <div class="header-icon">🔔</div>
+                    <div>
+                        <div class="header-title">Reminders</div>
+                        <div class="header-sub">Stay on top of everything</div>
                     </div>
                 </div>
+                <button class="btn-logout" onclick="window.logout()" title="Sign Out">🚪</button>
+            </div>
+        </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>🔁 Frequency</label>
-                        <select id="frequency" class="form-control" onchange="window.toggleCustomDays('customDaysDiv','customDays','frequency')">
-                            <option value="none">One time only</option>
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
-                            <option value="custom">Custom Days…</option>
-                        </select>
-                    </div>
-                    <div class="form-group" id="customDaysDiv" style="display:none;">
-                        <label>🔢 Every X Days</label>
-                        <input type="number" id="customDays" class="form-control" min="2" placeholder="e.g. 3">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>📍 Location (Optional)</label>
-                    <input type="text" id="location" class="form-control" placeholder="Add a location">
-                </div>
-
-                <div class="form-group">
-                    <label>💬 Notes (Optional)</label>
-                    <textarea id="notes" class="form-control" rows="2" placeholder="Extra details..."></textarea>
-                </div>
-
-                <button class="btn-submit" id="submitBtn" onclick="window.saveReminder()">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                    Save Reminder
+        <!-- ── MOBILE TABS (hidden on desktop) ── -->
+        <div class="mobile-tabs-wrap">
+            <div class="tabs">
+                <button class="tab" id="tabList" onclick="window.switchTab('list')">
+                    📋 My Reminders <span class="tab-badge" id="reminderCountMobile">0</span>
+                </button>
+                <button class="tab active" id="tabCreate" onclick="window.switchTab('create')">
+                    ➕ New Reminder
                 </button>
             </div>
         </div>
 
-        <!-- ── LIST PANEL ── -->
-        <div id="listPanel" style="display:none;">
-            <div class="filters">
-                <div class="chip active" data-filter="all"      onclick="window.setFilter(this)">All</div>
-                <div class="chip" data-filter="medicine"        onclick="window.setFilter(this)">💊 Medicine</div>
-                <div class="chip" data-filter="birthday"        onclick="window.setFilter(this)">🎂 Birthdays</div>
-                <div class="chip" data-filter="event"           onclick="window.setFilter(this)">📅 Events</div>
-                <div class="chip" data-filter="note"            onclick="window.setFilter(this)">📝 Notes</div>
+        <!-- ── DESKTOP TOPBAR (hidden on mobile) ── -->
+        <div class="desktop-topbar">
+            <div>
+                <h1 id="topbarTitle">New Reminder</h1>
+                <div class="topbar-sub" id="topbarSub">Add something worth remembering</div>
             </div>
-            <div id="remindersList"></div>
+            <button class="btn-new-desktop" id="topbarNewBtn" onclick="window.switchTab('create')" style="display:none;">
+                ➕ New Reminder
+            </button>
         </div>
 
-    </div><!-- /content-area -->
-</div><!-- /container -->
+        <div class="content-area">
+
+            <!-- Cloud status -->
+            <div id="cloudStatus"></div>
+
+            <!-- ── CREATE PANEL ── -->
+            <div id="createPanel">
+                <div class="card">
+                    <div class="card-title">✏️ Create Reminder</div>
+
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" id="title" class="form-control" placeholder="What should we remind you about?">
+                    </div>
+
+                    <div class="section-label">Category</div>
+                    <input type="hidden" id="category" value="medicine">
+                    <div class="category-strip">
+                        <button class="cat-btn active" data-value="medicine" onclick="window.selectCategory(this,'category')">
+                            <span class="cat-icon">💊</span>Medicine
+                        </button>
+                        <button class="cat-btn" data-value="birthday" onclick="window.selectCategory(this,'category')">
+                            <span class="cat-icon">🎂</span>Birthday
+                        </button>
+                        <button class="cat-btn" data-value="event" onclick="window.selectCategory(this,'category')">
+                            <span class="cat-icon">📅</span>Event
+                        </button>
+                        <button class="cat-btn" data-value="note" onclick="window.selectCategory(this,'category')">
+                            <span class="cat-icon">📝</span>Note
+                        </button>
+                        <button class="cat-btn" data-value="travel" onclick="window.selectCategory(this,'category')">
+                            <span class="cat-icon">✈️</span>Travel
+                        </button>
+                        <button class="cat-btn" data-value="payment" onclick="window.selectCategory(this,'category')">
+                            <span class="cat-icon">💳</span>Payment
+                        </button>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>📆 Date</label>
+                            <input type="date" id="date" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>⏰ Time</label>
+                            <input type="time" id="time" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>🔁 Frequency</label>
+                            <select id="frequency" class="form-control" onchange="window.toggleCustomDays('customDaysDiv','customDays','frequency')">
+                                <option value="none">One time only</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
+                                <option value="custom">Custom Days…</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="customDaysDiv" style="display:none;">
+                            <label>🔢 Every X Days</label>
+                            <input type="number" id="customDays" class="form-control" min="2" placeholder="e.g. 3">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>📍 Location (Optional)</label>
+                        <input type="text" id="location" class="form-control" placeholder="Add a location">
+                    </div>
+
+                    <div class="form-group">
+                        <label>💬 Notes (Optional)</label>
+                        <textarea id="notes" class="form-control" rows="2" placeholder="Extra details..."></textarea>
+                    </div>
+
+                    <button class="btn-submit" id="submitBtn" onclick="window.saveReminder()">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        Save Reminder
+                    </button>
+                </div>
+            </div>
+
+            <!-- ── LIST PANEL ── -->
+            <div id="listPanel" style="display:none;">
+                <div class="filters">
+                    <div class="chip active" data-filter="all"      onclick="window.setFilter(this)">All</div>
+                    <div class="chip" data-filter="medicine"        onclick="window.setFilter(this)">💊 Medicine</div>
+                    <div class="chip" data-filter="birthday"        onclick="window.setFilter(this)">🎂 Birthdays</div>
+                    <div class="chip" data-filter="event"           onclick="window.setFilter(this)">📅 Events</div>
+                    <div class="chip" data-filter="note"            onclick="window.setFilter(this)">📝 Notes</div>
+                    <div class="chip" data-filter="travel"          onclick="window.setFilter(this)">✈️ Travel</div>
+                    <div class="chip" data-filter="payment"         onclick="window.setFilter(this)">💳 Payment</div>
+                </div>
+                <div id="remindersList"></div>
+            </div>
+
+        </div><!-- /content-area -->
+    </div><!-- /main-col -->
+</div><!-- /app-shell -->
 
 <!-- ══ VIEW MODAL ══ -->
 <div class="modal-overlay" id="viewModal">
@@ -538,6 +705,12 @@
             <button class="cat-btn" data-value="note" onclick="window.selectCategory(this,'editCategory')">
                 <span class="cat-icon">📝</span>Note
             </button>
+            <button class="cat-btn" data-value="travel" onclick="window.selectCategory(this,'editCategory')">
+                <span class="cat-icon">✈️</span>Travel
+            </button>
+            <button class="cat-btn" data-value="payment" onclick="window.selectCategory(this,'editCategory')">
+                <span class="cat-icon">💳</span>Payment
+            </button>
         </div>
 
         <div class="form-row">
@@ -552,6 +725,7 @@
                     <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>
                     <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
                     <option value="custom">Custom…</option>
                 </select>
             </div>
@@ -583,7 +757,7 @@
 
 <div class="toast" id="toast">Saved!</div>
 
-<!-- ══ FIREBASE LOGIC (unchanged from your file) ══ -->
+<!-- ══ FIREBASE LOGIC ══ -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, set, update, remove, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -609,19 +783,19 @@ window.editingId     = null;
 window.deletingId    = null;
 let unsubscribeDb    = null;
 
-const CAT_ICONS  = { medicine:'💊', birthday:'🎂', event:'📅', note:'📝' };
-const CAT_LABELS = { medicine:'Medicine', birthday:'Birthday', event:'Event', note:'Note' };
-const FREQ_LABELS= { none:'One Time Only', daily:'Daily', weekly:'Weekly', monthly:'Monthly', custom:'Custom' };
+const CAT_ICONS  = { medicine:'💊', birthday:'🎂', event:'📅', note:'📝', travel:'✈️', payment:'💳' };
+const CAT_LABELS = { medicine:'Medicine', birthday:'Birthday', event:'Event', note:'Note', travel:'Travel', payment:'Payment' };
+const FREQ_LABELS= { none:'One Time Only', daily:'Daily', weekly:'Weekly', monthly:'Monthly', yearly:'Yearly', custom:'Custom' };
 
 // ── AUTH ──
 onAuthStateChanged(auth, (user) => {
     if (user) {
         document.getElementById('loginOverlay').style.display = 'none';
-        document.getElementById('mainContainer').style.display = 'block';
+        document.getElementById('appShell').classList.add('visible');
         startDatabaseSync();
     } else {
         document.getElementById('loginOverlay').style.display = 'flex';
-        document.getElementById('mainContainer').style.display = 'none';
+        document.getElementById('appShell').classList.remove('visible');
         if (unsubscribeDb) { unsubscribeDb(); unsubscribeDb = null; }
         window.reminders = [];
         window.renderList();
@@ -743,12 +917,43 @@ window.renderList = function() {
         return;
     }
     const sorted = [...filtered].sort((a,b) => new Date((a.date||'')+'T'+(a.time||'')) - new Date((b.date||'')+'T'+(b.time||'')));
+
     container.innerHTML = sorted.map(r => {
-        const isDone     = r.status === 'done';
-        const freqLabel  = r.frequency === 'custom' ? `Every ${r.customDays} days` : (FREQ_LABELS[r.frequency]||r.frequency||'Once');
-        const catIcon    = CAT_ICONS[r.category] || '🔔';
+        const isDone = r.status === 'done';
+        const freqLabel = r.frequency === 'custom' ? `Every ${r.customDays} days` : (FREQ_LABELS[r.frequency]||r.frequency||'Once');
+        const catIcon = CAT_ICONS[r.category] || '🔔';
+
+        // COUNTDAYS LOGIC
+        let approachingClass = '';
+        let countdownBadge = '';
+
+        if (r.date && !isDone) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Normalize time to midnight
+
+            // Handle date parsing safely assuming 'YYYY-MM-DD' structure
+            const [y, m, d] = r.date.split('-');
+            const remDate = new Date(y, m - 1, d);
+
+            const diffTime = remDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) {
+                approachingClass = ' overdue';
+                countdownBadge = `<span class="r-badge overdue">⚠️ Overdue by ${Math.abs(diffDays)} day(s)</span>`;
+            } else if (diffDays === 0) {
+                approachingClass = ' approaching';
+                countdownBadge = `<span class="r-badge approaching">🚨 Today!</span>`;
+            } else if (diffDays <= 3) {
+                approachingClass = ' approaching';
+                countdownBadge = `<span class="r-badge approaching">⏳ In ${diffDays} day(s)</span>`;
+            } else {
+                countdownBadge = `<span class="r-badge">⏳ In ${diffDays} day(s)</span>`;
+            }
+        }
+
         return `
-        <div class="reminder-item${isDone?' status-done':''}" onclick="window.viewReminder('${r.id}')">
+        <div class="reminder-item${isDone ? ' status-done' : approachingClass}" onclick="window.viewReminder('${r.id}')">
             <div class="reminder-item-top">
                 <div class="reminder-item-left">
                     <div class="reminder-cat-icon">${catIcon}</div>
@@ -757,6 +962,7 @@ window.renderList = function() {
                         <div class="reminder-meta">📆 ${r.date || '—'} &nbsp;⏰ ${r.time || '—'}</div>
                         <div class="reminder-badges">
                             <span class="r-badge">${CAT_LABELS[r.category]||r.category}</span>
+                            ${countdownBadge}
                             <span class="r-badge freq">${freqLabel}</span>
                             ${r.location ? `<span class="r-badge loc">📍 ${escHtml(r.location)}</span>` : ''}
                             ${isDone ? `<span class="r-badge done">✅ Done</span>` : ''}
@@ -776,8 +982,22 @@ window.switchTab = function(tab) {
     const isC = tab === 'create';
     document.getElementById('createPanel').style.display = isC ? '' : 'none';
     document.getElementById('listPanel').style.display   = isC ? 'none' : '';
+
+    // Mobile tabs
     document.getElementById('tabCreate').classList.toggle('active',  isC);
     document.getElementById('tabList').classList.toggle('active',   !isC);
+
+    // Desktop sidebar nav
+    document.getElementById('navCreate').classList.toggle('active',  isC);
+    document.getElementById('navList').classList.toggle('active',   !isC);
+
+    // Desktop topbar
+    document.getElementById('topbarTitle').textContent = isC ? 'New Reminder' : 'My Reminders';
+    document.getElementById('topbarSub').textContent    = isC ? 'Add something worth remembering' : 'Everything you\u2019ve set reminders for';
+    document.getElementById('topbarNewBtn').style.display = isC ? 'none' : 'flex';
+
+    // Desktop grid vs mobile stack for the list
+    document.getElementById('remindersList').classList.toggle('grid-view', !isC);
 };
 
 window.setFilter = function(el) {
@@ -849,11 +1069,17 @@ document.querySelectorAll('.modal-overlay').forEach(el => {
     el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
 });
 
-function updateBadge()     { document.getElementById('reminderCount').textContent = window.reminders.length; }
+function updateBadge() {
+    document.getElementById('reminderCountMobile').textContent  = window.reminders.length;
+    document.getElementById('reminderCountDesktop').textContent = window.reminders.length;
+}
 function setCloudStatus(t,m){ document.getElementById('cloudStatus').innerHTML = `<div class="cloud-status ${t}">${m}</div>`; }
 function showToast(msg)     { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 3000); }
 function resetForm()        { ['title','date','time','location','notes'].forEach(id => document.getElementById(id).value=''); document.getElementById('frequency').value='none'; document.getElementById('customDaysDiv').style.display='none'; document.getElementById('customDays').value=''; document.querySelectorAll('#createPanel .cat-btn').forEach((b,i)=>b.classList.toggle('active',i===0)); document.getElementById('category').value='medicine'; }
 function escHtml(s)         { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// Set initial list-grid state to match default active tab (create)
+document.getElementById('remindersList').classList.toggle('grid-view', false);
 </script>
 
 </body>
