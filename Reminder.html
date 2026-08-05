@@ -291,13 +291,21 @@
         }
         .btn-new-desktop:hover { opacity: 0.92; transform: translateY(-1px); }
 
-        /* ══ CLOUD STATUS ══ */
-        .cloud-status {
-            font-size: 0.75rem; font-weight: 600; padding: 8px 12px;
-            border-radius: 8px; margin-bottom: 14px; text-align: center;
-        }
-        .cloud-status.ok    { background: #ECFDF5; color: #059669; }
-        .cloud-status.error { background: #FEF2F2; color: #DC2626; }
+/* ══ CLOUD STATUS DOT ══ */
+.status-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    display: inline-block;
+    transition: background 0.3s, box-shadow 0.3s;
+}
+.status-dot.ok    { background: #10B981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.6); animation: heartbeat 1.6s ease-in-out infinite; }
+.status-dot.error { background: #EF4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.6); }
+
+@keyframes heartbeat {
+    0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55); }
+    25%  { transform: scale(1.35); box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.12); }
+    45%  { transform: scale(1);    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
 
         /* ══ FILTERS ══ */
         .filters { display: flex; gap: 7px; margin-bottom: 16px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
@@ -495,13 +503,15 @@
 
     <!-- ── DESKTOP SIDEBAR ── -->
     <aside class="sidebar">
-        <div class="sidebar-brand">
-            <div class="header-icon">🔔</div>
-            <div>
-                <div class="header-title">Reminders</div>
-                <div class="header-sub">Stay on top of everything</div>
-            </div>
+<div class="sidebar-brand">
+    <div class="header-icon">🔔</div>
+    <div>
+        <div class="header-title" style="display: flex; align-items: center; gap: 8px;">
+            Reminders <div id="cloudStatusDesktop"></div>
         </div>
+        <div class="header-sub">Stay on top of everything</div>
+    </div>
+</div>
 
         <nav class="sidebar-nav">
             <button class="nav-item active" id="navList" data-tab="list" onclick="window.switchTab('list')">
@@ -530,7 +540,9 @@
                 <div class="header-brand">
                     <div class="header-icon">🔔</div>
                     <div>
-                        <div class="header-title">Reminders</div>
+                        <div class="header-title" style="display: flex; align-items: center; gap: 8px;">
+                            Reminders <div id="cloudStatusMobile"></div>
+                        </div>
                         <div class="header-sub">Stay on top of everything</div>
                     </div>
                 </div>
@@ -562,9 +574,6 @@
         </div>
 
         <div class="content-area">
-
-            <!-- Cloud status -->
-            <div id="cloudStatus"></div>
 
             <!-- ── CREATE PANEL ── -->
             <div id="createPanel">
@@ -1073,7 +1082,13 @@ function updateBadge() {
     document.getElementById('reminderCountMobile').textContent  = window.reminders.length;
     document.getElementById('reminderCountDesktop').textContent = window.reminders.length;
 }
-function setCloudStatus(t,m){ document.getElementById('cloudStatus').innerHTML = `<div class="cloud-status ${t}">${m}</div>`; }
+function setCloudStatus(t,m) { 
+    const dotHtml = `<div class="status-dot ${t}" title="${m}"></div>`;
+    const mStatus = document.getElementById('cloudStatusMobile');
+    const dStatus = document.getElementById('cloudStatusDesktop');
+    if (mStatus) mStatus.innerHTML = dotHtml;
+    if (dStatus) dStatus.innerHTML = dotHtml;
+}
 function showToast(msg)     { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 3000); }
 function resetForm()        { ['title','date','time','location','notes'].forEach(id => document.getElementById(id).value=''); document.getElementById('frequency').value='none'; document.getElementById('customDaysDiv').style.display='none'; document.getElementById('customDays').value=''; document.querySelectorAll('#createPanel .cat-btn').forEach((b,i)=>b.classList.toggle('active',i===0)); document.getElementById('category').value='medicine'; }
 function escHtml(s)         { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
