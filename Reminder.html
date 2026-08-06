@@ -154,15 +154,15 @@
             box-shadow: var(--shadow-lg); margin-bottom: 20px;
         }
         .tab {
-            flex: 1; padding: 11px 8px; border: none; border-radius: 12px;
-            font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 600;
+            flex: 1; padding: 11px 4px; border: none; border-radius: 12px;
+            font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 600;
             color: var(--slate-400); background: transparent; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 6px;
-            transition: all 0.18s ease;
+            display: flex; align-items: center; justify-content: center; gap: 4px;
+            transition: all 0.18s ease; white-space: nowrap;
         }
         .tab.active { background: linear-gradient(135deg, var(--indigo), var(--violet)); color: #fff; box-shadow: 0 4px 14px rgba(79,70,229,0.32); }
         .tab-badge {
-            font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 20px;
+            font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 20px;
             background: rgba(255,255,255,0.25); color: #fff;
         }
         .tab:not(.active) .tab-badge { background: var(--indigo-md); color: var(--indigo); }
@@ -330,8 +330,10 @@
 
         /* Highlight Classes */
         .reminder-item.status-done { border-left-color: var(--green); opacity: 0.65; }
-        .reminder-item.approaching { border-left-color: var(--amber); background-color: #FFFBEB; }
-        .reminder-item.overdue { border-left-color: var(--red); background-color: #FEF2F2; }
+        .reminder-item.countdown-3 { border-left-color: #F59E0B; background-color: #FFFBEB; }
+        .reminder-item.countdown-2 { border-left-color: #EA580C; background-color: #FFF1E4; }
+        .reminder-item.countdown-1 { border-left-color: #EF4444; background-color: #FEF2F2; }
+        .reminder-item.overdue     { border-left-color: #B91C1C; background-color: #FEE2E2; }
 
         .reminder-item-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; height: 100%; }
         .reminder-item-left { display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
@@ -349,8 +351,10 @@
         .r-badge.freq { background: var(--indigo-md); color: var(--indigo); }
         .r-badge.loc  { background: #FEF3C7; color: #D97706; }
         .r-badge.done { background: #D1FAE5; color: #059669; }
-        .r-badge.approaching { background: #FDE68A; color: #D97706; }
-        .r-badge.overdue { background: #FECACA; color: #DC2626; }
+        .r-badge.countdown-3 { background: #FEF3C7; color: #D97706; }
+        .r-badge.countdown-2 { background: #FED7AA; color: #C2410C; }
+        .r-badge.countdown-1 { background: #FECACA; color: #DC2626; }
+        .r-badge.overdue     { background: #FCA5A5; color: #991B1B; }
 
         .item-actions { display: flex; gap: 7px; flex-shrink: 0; }
         .icon-btn {
@@ -362,6 +366,8 @@
         .icon-btn.edit:hover { background: #C7D2FE; }
         .icon-btn.del  { background: #FEE2E2; color: var(--red); }
         .icon-btn.del:hover  { background: #FECACA; }
+        .icon-btn.done { background: #D1FAE5; color: #059669; }
+        .icon-btn.done:hover { background: #A7F3D0; }
 
         /* ══ EMPTY STATE ══ */
         .empty-state { text-align: center; padding: 40px 20px; color: var(--slate-400); grid-column: 1 / -1; }
@@ -463,15 +469,15 @@
             #createPanel .card { max-width: 640px; margin: 0 auto; padding: 32px; }
 
             /* List panel: responsive grid */
-            #listPanel .filters { margin-bottom: 22px; }
-            #remindersList.grid-view {
+            #listPanel .filters, #archivePanel .filters { margin-bottom: 22px; }
+            #remindersList.grid-view, #archiveList.grid-view {
                 display: grid;
                 grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
                 gap: 14px;
             }
-            #remindersList.grid-view .reminder-item { margin-bottom: 0; height: 100%; }
-            #remindersList.grid-view .reminder-item-top { flex-direction: column; }
-            #remindersList.grid-view .item-actions { margin-top: 12px; align-self: flex-end; }
+            #remindersList.grid-view .reminder-item, #archiveList.grid-view .reminder-item { margin-bottom: 0; height: 100%; }
+            #remindersList.grid-view .reminder-item-top, #archiveList.grid-view .reminder-item-top { flex-direction: column; }
+            #remindersList.grid-view .item-actions, #archiveList.grid-view .item-actions { margin-top: 12px; align-self: flex-end; }
 
             .cloud-status { max-width: 420px; }
         }
@@ -519,6 +525,11 @@
                 <span class="nav-label">My Reminders</span>
                 <span class="tab-badge" id="reminderCountDesktop">0</span>
             </button>
+            <button class="nav-item" id="navArchive" data-tab="archive" onclick="window.switchTab('archive')">
+                <span class="nav-icon">📦</span>
+                <span class="nav-label">Archive</span>
+                <span class="tab-badge" id="archiveCountDesktop">0</span>
+            </button>
             <button class="nav-item" id="navCreate" data-tab="create" onclick="window.switchTab('create')">
                 <span class="nav-icon">➕</span>
                 <span class="nav-label">New Reminder</span>
@@ -554,10 +565,13 @@
         <div class="mobile-tabs-wrap">
             <div class="tabs">
                 <button class="tab" id="tabList" onclick="window.switchTab('list')">
-                    📋 My Reminders <span class="tab-badge" id="reminderCountMobile">0</span>
+                    📋 List <span class="tab-badge" id="reminderCountMobile">0</span>
+                </button>
+                <button class="tab" id="tabArchive" onclick="window.switchTab('archive')">
+                    📦 Archive <span class="tab-badge" id="archiveCountMobile">0</span>
                 </button>
                 <button class="tab active" id="tabCreate" onclick="window.switchTab('create')">
-                    ➕ New Reminder
+                    ➕ New
                 </button>
             </div>
         </div>
@@ -668,6 +682,20 @@
                 <div id="remindersList"></div>
             </div>
 
+            <!-- ── ARCHIVE PANEL ── -->
+            <div id="archivePanel" style="display:none;">
+                <div class="filters">
+                    <div class="chip active" data-filter="all"      onclick="window.setArchiveFilter(this)">All</div>
+                    <div class="chip" data-filter="medicine"        onclick="window.setArchiveFilter(this)">💊 Medicine</div>
+                    <div class="chip" data-filter="birthday"        onclick="window.setArchiveFilter(this)">🎂 Birthdays</div>
+                    <div class="chip" data-filter="event"           onclick="window.setArchiveFilter(this)">📅 Events</div>
+                    <div class="chip" data-filter="note"            onclick="window.setArchiveFilter(this)">📝 Notes</div>
+                    <div class="chip" data-filter="travel"          onclick="window.setArchiveFilter(this)">✈️ Travel</div>
+                    <div class="chip" data-filter="payment"         onclick="window.setArchiveFilter(this)">💳 Payment</div>
+                </div>
+                <div id="archiveList"></div>
+            </div>
+
         </div><!-- /content-area -->
     </div><!-- /main-col -->
 </div><!-- /app-shell -->
@@ -680,9 +708,7 @@
             <button class="btn-close" onclick="window.closeModal('viewModal')">✕</button>
         </div>
         <div id="viewModalBody" style="display:flex;flex-direction:column;gap:2px;margin-bottom:20px;"></div>
-        <button class="btn-submit" onclick="window.closeModal('viewModal'); window.openEdit(window.editingId)">
-            ✏️ Edit Reminder
-        </button>
+        <div id="viewModalActions" style="display:flex; flex-direction:column; gap:10px;"></div>
     </div>
 </div>
 
@@ -788,6 +814,7 @@ const auth = getAuth(app);
 
 window.reminders     = [];
 window.currentFilter = 'all';
+window.archiveFilter = 'all';
 window.editingId     = null;
 window.deletingId    = null;
 let unsubscribeDb    = null;
@@ -808,6 +835,7 @@ onAuthStateChanged(auth, (user) => {
         if (unsubscribeDb) { unsubscribeDb(); unsubscribeDb = null; }
         window.reminders = [];
         window.renderList();
+        window.renderArchive();
     }
 });
 
@@ -842,6 +870,7 @@ function startDatabaseSync() {
         if (data) { for (let key in data) window.reminders.push(data[key]); }
         updateBadge();
         window.renderList();
+        window.renderArchive();
         setCloudStatus('ok', '✅ Live sync with Firebase active');
     }, () => {
         setCloudStatus('error', '⚠️ Firebase connection lost or permission denied.');
@@ -920,7 +949,9 @@ function gatherFormData(t, d, tm, f, cd, c, l, n) {
 window.renderList = function() {
     const container = document.getElementById('remindersList');
     if (!container) return;
-    const filtered = window.currentFilter === 'all' ? window.reminders : window.reminders.filter(r => r.category === window.currentFilter);
+    // Active list excludes anything marked done — those live in the Archive.
+    const active = window.reminders.filter(r => r.status !== 'done');
+    const filtered = window.currentFilter === 'all' ? active : active.filter(r => r.category === window.currentFilter);
     if (filtered.length === 0) {
         container.innerHTML = `<div class="empty-state"><div class="empty-icon">🔔</div><p>No reminders found.</p></div>`;
         return;
@@ -928,15 +959,14 @@ window.renderList = function() {
     const sorted = [...filtered].sort((a,b) => new Date((a.date||'')+'T'+(a.time||'')) - new Date((b.date||'')+'T'+(b.time||'')));
 
     container.innerHTML = sorted.map(r => {
-        const isDone = r.status === 'done';
         const freqLabel = r.frequency === 'custom' ? `Every ${r.customDays} days` : (FREQ_LABELS[r.frequency]||r.frequency||'Once');
         const catIcon = CAT_ICONS[r.category] || '🔔';
 
-        // COUNTDAYS LOGIC
-        let approachingClass = '';
+        // COUNTDOWN LOGIC — 3-day escalation: orange -> darker orange -> red, overdue = deepest red
+        let countdownClass = '';
         let countdownBadge = '';
 
-        if (r.date && !isDone) {
+        if (r.date) {
             const today = new Date();
             today.setHours(0, 0, 0, 0); // Normalize time to midnight
 
@@ -948,21 +978,27 @@ window.renderList = function() {
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
             if (diffDays < 0) {
-                approachingClass = ' overdue';
+                countdownClass = ' overdue';
                 countdownBadge = `<span class="r-badge overdue">⚠️ Overdue by ${Math.abs(diffDays)} day(s)</span>`;
             } else if (diffDays === 0) {
-                approachingClass = ' approaching';
-                countdownBadge = `<span class="r-badge approaching">🚨 Today!</span>`;
-            } else if (diffDays <= 3) {
-                approachingClass = ' approaching';
-                countdownBadge = `<span class="r-badge approaching">⏳ In ${diffDays} day(s)</span>`;
+                countdownClass = ' countdown-1';
+                countdownBadge = `<span class="r-badge countdown-1">🚨 Today!</span>`;
+            } else if (diffDays === 1) {
+                countdownClass = ' countdown-1';
+                countdownBadge = `<span class="r-badge countdown-1">🔥 In 1 day</span>`;
+            } else if (diffDays === 2) {
+                countdownClass = ' countdown-2';
+                countdownBadge = `<span class="r-badge countdown-2">⏳ In 2 days</span>`;
+            } else if (diffDays === 3) {
+                countdownClass = ' countdown-3';
+                countdownBadge = `<span class="r-badge countdown-3">⏳ In 3 days</span>`;
             } else {
                 countdownBadge = `<span class="r-badge">⏳ In ${diffDays} day(s)</span>`;
             }
         }
 
         return `
-        <div class="reminder-item${isDone ? ' status-done' : approachingClass}" onclick="window.viewReminder('${r.id}')">
+        <div class="reminder-item${countdownClass}" onclick="window.viewReminder('${r.id}')">
             <div class="reminder-item-top">
                 <div class="reminder-item-left">
                     <div class="reminder-cat-icon">${catIcon}</div>
@@ -974,46 +1010,110 @@ window.renderList = function() {
                             ${countdownBadge}
                             <span class="r-badge freq">${freqLabel}</span>
                             ${r.location ? `<span class="r-badge loc">📍 ${escHtml(r.location)}</span>` : ''}
-                            ${isDone ? `<span class="r-badge done">✅ Done</span>` : ''}
                         </div>
                     </div>
                 </div>
                 <div class="item-actions" onclick="event.stopPropagation()">
-                    <button class="icon-btn edit" onclick="window.openEdit('${r.id}')">✏️</button>
-                    <button class="icon-btn del"  onclick="window.openDelete('${r.id}')">🗑️</button>
+                    <button class="icon-btn done" onclick="window.markDone('${r.id}')" title="Mark as done">✅</button>
+                    <button class="icon-btn edit" onclick="window.openEdit('${r.id}')" title="Edit">✏️</button>
+                    <button class="icon-btn del"  onclick="window.openDelete('${r.id}')" title="Delete">🗑️</button>
                 </div>
             </div>
         </div>`;
     }).join('');
 };
 
+window.renderArchive = function() {
+    const container = document.getElementById('archiveList');
+    if (!container) return;
+    const done = window.reminders.filter(r => r.status === 'done');
+    const filtered = window.archiveFilter === 'all' ? done : done.filter(r => r.category === window.archiveFilter);
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-icon">📦</div><p>No archived reminders yet.</p></div>`;
+        return;
+    }
+    const sorted = [...filtered].sort((a,b) => (b.completedAt||0) - (a.completedAt||0));
+
+    container.innerHTML = sorted.map(r => {
+        const freqLabel = r.frequency === 'custom' ? `Every ${r.customDays} days` : (FREQ_LABELS[r.frequency]||r.frequency||'Once');
+        const catIcon = CAT_ICONS[r.category] || '🔔';
+        return `
+        <div class="reminder-item status-done" onclick="window.viewReminder('${r.id}')">
+            <div class="reminder-item-top">
+                <div class="reminder-item-left">
+                    <div class="reminder-cat-icon">${catIcon}</div>
+                    <div>
+                        <div class="reminder-title">${escHtml(r.title)}</div>
+                        <div class="reminder-meta">📆 ${r.date || '—'} &nbsp;⏰ ${r.time || '—'}</div>
+                        <div class="reminder-badges">
+                            <span class="r-badge">${CAT_LABELS[r.category]||r.category}</span>
+                            <span class="r-badge freq">${freqLabel}</span>
+                            ${r.location ? `<span class="r-badge loc">📍 ${escHtml(r.location)}</span>` : ''}
+                            <span class="r-badge done">✅ Done</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="item-actions" onclick="event.stopPropagation()">
+                    <button class="icon-btn edit" onclick="window.openEdit('${r.id}')" title="Edit for future reference">✏️</button>
+                    <button class="icon-btn del"  onclick="window.openDelete('${r.id}')" title="Delete permanently">🗑️</button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+};
+
+window.markDone = async function(id) {
+    try {
+        await update(ref(db, 'reminders/' + id), { status: 'done', completedAt: Date.now() });
+        showToast('✅ Marked as done — moved to Archive.');
+    } catch (e) {
+        showToast('⚠️ Error updating.', false);
+    }
+};
+
 window.switchTab = function(tab) {
-    const isC = tab === 'create';
-    document.getElementById('createPanel').style.display = isC ? '' : 'none';
-    document.getElementById('listPanel').style.display   = isC ? 'none' : '';
+    const isCreate  = tab === 'create';
+    const isArchive = tab === 'archive';
+    const isList    = tab === 'list';
+
+    document.getElementById('createPanel').style.display  = isCreate  ? '' : 'none';
+    document.getElementById('listPanel').style.display    = isList    ? '' : 'none';
+    document.getElementById('archivePanel').style.display = isArchive ? '' : 'none';
 
     // Mobile tabs
-    document.getElementById('tabCreate').classList.toggle('active',  isC);
-    document.getElementById('tabList').classList.toggle('active',   !isC);
+    document.getElementById('tabCreate').classList.toggle('active', isCreate);
+    document.getElementById('tabList').classList.toggle('active', isList);
+    document.getElementById('tabArchive').classList.toggle('active', isArchive);
 
     // Desktop sidebar nav
-    document.getElementById('navCreate').classList.toggle('active',  isC);
-    document.getElementById('navList').classList.toggle('active',   !isC);
+    document.getElementById('navCreate').classList.toggle('active', isCreate);
+    document.getElementById('navList').classList.toggle('active', isList);
+    document.getElementById('navArchive').classList.toggle('active', isArchive);
 
     // Desktop topbar
-    document.getElementById('topbarTitle').textContent = isC ? 'New Reminder' : 'My Reminders';
-    document.getElementById('topbarSub').textContent    = isC ? 'Add something worth remembering' : 'Everything you\u2019ve set reminders for';
-    document.getElementById('topbarNewBtn').style.display = isC ? 'none' : 'flex';
+    const titles = { create: 'New Reminder', list: 'My Reminders', archive: 'Archive' };
+    const subs   = { create: 'Add something worth remembering', list: 'Everything you\u2019ve set reminders for', archive: 'Completed reminders you can revisit or clear' };
+    document.getElementById('topbarTitle').textContent = titles[tab];
+    document.getElementById('topbarSub').textContent    = subs[tab];
+    document.getElementById('topbarNewBtn').style.display = isCreate ? 'none' : 'flex';
 
-    // Desktop grid vs mobile stack for the list
-    document.getElementById('remindersList').classList.toggle('grid-view', !isC);
+    // Desktop grid vs mobile stack for the lists
+    document.getElementById('remindersList').classList.toggle('grid-view', isList);
+    document.getElementById('archiveList').classList.toggle('grid-view', isArchive);
 };
 
 window.setFilter = function(el) {
-    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    el.closest('.filters').querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
     el.classList.add('active');
     window.currentFilter = el.dataset.filter;
     window.renderList();
+};
+
+window.setArchiveFilter = function(el) {
+    el.closest('.filters').querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    window.archiveFilter = el.dataset.filter;
+    window.renderArchive();
 };
 
 window.openModal  = function(id) { document.getElementById(id).classList.add('open'); };
@@ -1023,6 +1123,7 @@ window.viewReminder = function(id) {
     const r = window.reminders.find(x => x.id === id);
     if (!r) return;
     window.editingId = id;
+    const isDone = r.status === 'done';
     const freqLabel = r.frequency === 'custom' ? `Every ${r.customDays} days` : (FREQ_LABELS[r.frequency]||r.frequency||'Once');
     document.getElementById('viewModalTitle').textContent = (CAT_ICONS[r.category]||'🔔') + ' ' + (r.title||'Untitled');
     document.getElementById('viewModalBody').innerHTML = `
@@ -1030,9 +1131,16 @@ window.viewReminder = function(id) {
         <div class="detail-row"><span class="detail-icon">📆</span><div><div class="detail-key">Date</div><div class="detail-val">${r.date||'—'}</div></div></div>
         <div class="detail-row"><span class="detail-icon">⏰</span><div><div class="detail-key">Time</div><div class="detail-val">${r.time||'—'}</div></div></div>
         <div class="detail-row"><span class="detail-icon">🔁</span><div><div class="detail-key">Frequency</div><div class="detail-val">${freqLabel}</div></div></div>
-        <div class="detail-row"><span class="detail-icon">📊</span><div><div class="detail-key">Status</div><div class="detail-val">${r.status||'pending'}</div></div></div>
+        <div class="detail-row"><span class="detail-icon">📊</span><div><div class="detail-key">Status</div><div class="detail-val">${isDone ? '✅ Done (Archived)' : 'Pending'}</div></div></div>
         ${r.location?`<div class="detail-row"><span class="detail-icon">📍</span><div><div class="detail-key">Location</div><div class="detail-val">${escHtml(r.location)}</div></div></div>`:''}
         ${r.notes?`<div class="detail-row"><span class="detail-icon">💬</span><div><div class="detail-key">Notes</div><div class="detail-val">${escHtml(r.notes)}</div></div></div>`:''}
+    `;
+    document.getElementById('viewModalActions').innerHTML = isDone ? `
+        <button class="btn-submit" onclick="window.closeModal('viewModal'); window.openEdit('${id}')">✏️ Edit Reminder</button>
+        <button class="btn-cancel" onclick="window.closeModal('viewModal'); window.openDelete('${id}')">🗑️ Delete from Archive</button>
+    ` : `
+        <button class="btn-submit" onclick="window.closeModal('viewModal'); window.markDone('${id}')">✅ Mark as Done</button>
+        <button class="btn-cancel" onclick="window.closeModal('viewModal'); window.openEdit('${id}')">✏️ Edit Reminder</button>
     `;
     window.openModal('viewModal');
 };
@@ -1079,8 +1187,12 @@ document.querySelectorAll('.modal-overlay').forEach(el => {
 });
 
 function updateBadge() {
-    document.getElementById('reminderCountMobile').textContent  = window.reminders.length;
-    document.getElementById('reminderCountDesktop').textContent = window.reminders.length;
+    const activeCount  = window.reminders.filter(r => r.status !== 'done').length;
+    const archiveCount = window.reminders.filter(r => r.status === 'done').length;
+    document.getElementById('reminderCountMobile').textContent   = activeCount;
+    document.getElementById('reminderCountDesktop').textContent  = activeCount;
+    document.getElementById('archiveCountMobile').textContent    = archiveCount;
+    document.getElementById('archiveCountDesktop').textContent   = archiveCount;
 }
 function setCloudStatus(t,m) { 
     const dotHtml = `<div class="status-dot ${t}" title="${m}"></div>`;
