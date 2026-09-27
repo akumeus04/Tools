@@ -888,21 +888,40 @@ function getCountdownInfo(r) {
     const now = new Date();
     const diffMs = target - now;
     const absMs = Math.abs(diffMs);
+    
+    // Calculate total values
     const mins  = Math.floor(absMs / 60000);
     const hours = Math.floor(absMs / 3600000);
     const days  = Math.floor(absMs / 86400000);
+    
+    // Calculate the leftover minutes after subtracting full hours
+    const remainderMins = mins % 60;
 
     if (diffMs < 0) {
-        let label = days >= 1 ? `${days} day(s)` : hours >= 1 ? `${hours} hour(s)` : `${Math.max(mins, 1)} minute(s)`;
+        let label = '';
+        if (days >= 1) {
+            label = `${days} day(s)`;
+        } else if (hours >= 1) {
+            label = remainderMins > 0 ? `${hours}h ${remainderMins}m` : `${hours}h`;
+        } else {
+            label = `${Math.max(mins, 1)}m`;
+        }
         return { cls: ' overdue', badge: `<span class="r-badge overdue">⚠️ Overdue by ${label}</span>` };
     }
+    
     if (days >= 4)  return { cls: '', badge: `<span class="r-badge">⏳ In ${days} day(s)</span>` };
     if (days === 3) return { cls: ' countdown-3', badge: `<span class="r-badge countdown-3">⏳ In 3 days</span>` };
     if (days === 2) return { cls: ' countdown-2', badge: `<span class="r-badge countdown-2">⏳ In 2 days</span>` };
     if (days === 1) return { cls: ' countdown-1', badge: `<span class="r-badge countdown-1">🔥 In 1 day</span>` };
-    // Same calendar day left — show hours/minutes instead of a misleading day count
-    if (hours >= 1) return { cls: ' countdown-1', badge: `<span class="r-badge countdown-1">🚨 In ${hours} hour(s)</span>` };
+    
+    // Same calendar day left — show hours and minutes
+    if (hours >= 1) {
+        const timeLabel = remainderMins > 0 ? `${hours}h ${remainderMins}m` : `${hours}h`;
+        return { cls: ' countdown-1', badge: `<span class="r-badge countdown-1">🚨 In ${timeLabel}</span>` };
+    }
+    
     if (mins >= 1)  return { cls: ' countdown-1', badge: `<span class="r-badge countdown-1">🚨 In ${mins} min</span>` };
+    
     return { cls: ' countdown-1', badge: `<span class="r-badge countdown-1">🚨 Now!</span>` };
 }
 
