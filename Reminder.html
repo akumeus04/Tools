@@ -636,7 +636,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>🔁 Frequency</label>
-                            <select id="frequency" class="form-control" onchange="window.toggleCustomDays('customDaysDiv','customDays','frequency','customUnit')">
+                            <select id="frequency" class="form-control" onchange="window.toggleCustomDays('frequency','custom')">
                                 <option value="none">One time only</option>
                                 <option value="daily">Daily</option>
                                 <option value="weekly">Weekly</option>
@@ -645,18 +645,31 @@
                                 <option value="custom">Custom…</option>
                             </select>
                         </div>
-                        <div class="form-group" id="customDaysDiv" style="display:none;">
-                            <label>🔢 Repeat every</label>
-                            <div style="display:flex; gap:8px;">
-                                <input type="number" id="customDays" class="form-control" min="2" placeholder="e.g. 3" style="flex:1;">
-                                <select id="customUnit" class="form-control" style="flex:1;" onchange="window.updateCustomMin('customDays','customUnit')">
-                                    <option value="minutes">Minutes</option>
-                                    <option value="hours">Hours</option>
-                                    <option value="days" selected>Days</option>
-                                </select>
-                            </div>
+                        <div class="form-group" id="customTypeDiv" style="display:none;">
+                            <label>🔽 Custom Type</label>
+                            <select id="customType" class="form-control" onchange="window.toggleCustomType('custom')">
+                                <option value="days">Days</option>
+                                <option value="hours">Hours</option>
+                                <option value="minutes">Minutes</option>
+                            </select>
                         </div>
                     </div>
+
+                    <div id="customDiv" style="display:none;">
+                        <div class="form-group" id="customDaysFieldDiv" style="display:none;">
+                            <label>🔢 Every X Days</label>
+                            <input type="number" id="customDaysVal" class="form-control" min="2" placeholder="e.g. 3">
+                        </div>
+                        <div class="form-group" id="customHoursFieldDiv" style="display:none;">
+                            <label>🔢 Every X Hours</label>
+                            <input type="number" id="customHoursVal" class="form-control" min="1" placeholder="e.g. 2">
+                        </div>
+                        <div class="form-group" id="customMinutesFieldDiv" style="display:none;">
+                            <label>🔢 Every X Minutes</label>
+                            <input type="number" id="customMinutesVal" class="form-control" min="1" placeholder="e.g. 15">
+                        </div>
+                    </div>
+
 
                     <div class="form-group">
                         <label>📍 Location (Optional)</label>
@@ -762,7 +775,7 @@
         <div class="form-row">
             <div class="form-group">
                 <label>🔁 Frequency</label>
-                <select id="editFrequency" class="form-control" onchange="window.toggleCustomDays('editCustomDaysDiv','editCustomDays','editFrequency','editCustomUnit')">
+                <select id="editFrequency" class="form-control" onchange="window.toggleCustomDays('editFrequency','editCustom')">
                     <option value="none">One time only</option>
                     <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>
@@ -771,16 +784,27 @@
                     <option value="custom">Custom…</option>
                 </select>
             </div>
-            <div class="form-group" id="editCustomDaysDiv" style="display:none;">
-                <label>🔢 Repeat every</label>
-                <div style="display:flex; gap:8px;">
-                    <input type="number" id="editCustomDays" class="form-control" min="2" style="flex:1;">
-                    <select id="editCustomUnit" class="form-control" style="flex:1;" onchange="window.updateCustomMin('editCustomDays','editCustomUnit')">
-                        <option value="minutes">Minutes</option>
-                        <option value="hours">Hours</option>
-                        <option value="days" selected>Days</option>
-                    </select>
-                </div>
+            <div class="form-group" id="editCustomTypeDiv" style="display:none;">
+                <label>🔽 Custom Type</label>
+                <select id="editCustomType" class="form-control" onchange="window.toggleCustomType('editCustom')">
+                    <option value="days">Days</option>
+                    <option value="hours">Hours</option>
+                    <option value="minutes">Minutes</option>
+                </select>
+            </div>
+        </div>
+        <div id="editCustomDiv" style="display:none;">
+            <div class="form-group" id="editCustomDaysFieldDiv" style="display:none;">
+                <label>🔢 Every X Days</label>
+                <input type="number" id="editCustomDaysVal" class="form-control" min="2">
+            </div>
+            <div class="form-group" id="editCustomHoursFieldDiv" style="display:none;">
+                <label>🔢 Every X Hours</label>
+                <input type="number" id="editCustomHoursVal" class="form-control" min="1">
+            </div>
+            <div class="form-group" id="editCustomMinutesFieldDiv" style="display:none;">
+                <label>🔢 Every X Minutes</label>
+                <input type="number" id="editCustomMinutesVal" class="form-control" min="1">
             </div>
         </div>
         <div class="form-group"><label>📍 Location</label><input type="text" id="editLocation" class="form-control"></div>
@@ -837,11 +861,49 @@ const CAT_ICONS  = { medicine:'💊', birthday:'🎂', event:'📅', note:'📝'
 const CAT_LABELS = { medicine:'Medicine', birthday:'Birthday', event:'Event', note:'Note', travel:'Travel', payment:'Payment' };
 const FREQ_LABELS= { none:'One Time Only', daily:'Daily', weekly:'Weekly', monthly:'Monthly', yearly:'Yearly', custom:'Custom' };
 function getFreqLabel(r) {
-    if (r.frequency !== 'custom') return FREQ_LABELS[r.frequency] || r.frequency || 'Once';
-    const n = r.customDays || 1;
+    if (r.frequency === 'none' || !r.frequency) return 'One Time Only';
+    if (r.frequency !== 'custom') return `🔁 ${FREQ_LABELS[r.frequency] || r.frequency}`;
+    
     const unit = r.customUnit || 'days';
+    let n = 1;
+    
+    if (unit === 'days') n = r.customDays || 1;
+    else if (unit === 'hours') n = r.customHours || 1;
+    else if (unit === 'minutes') n = r.customMinutes || 1;
+
     const unitLabel = n == 1 ? unit.slice(0, -1) : unit; // singular for 1
-    return `Every ${n} ${unitLabel}`;
+    return `🔁 Every ${n} ${unitLabel}`;
+}
+
+// Countdown to the reminder's next due moment — uses the FULL date+time,
+// never the repeat frequency/unit, and adapts its display granularity
+// (days / hours / minutes) so a same-day or hourly reminder doesn't get
+// mislabeled as "in X days". This is intentionally independent of
+// getFreqLabel() above: the countdown badge answers "when is it next due",
+// the freq badge answers "how often does it repeat" — two different facts.
+function getCountdownInfo(r) {
+    if (!r.date) return { cls: '', badge: '' };
+    const target = new Date(`${r.date}T${r.time || '00:00'}`);
+    if (isNaN(target.getTime())) return { cls: '', badge: '' };
+    const now = new Date();
+    const diffMs = target - now;
+    const absMs = Math.abs(diffMs);
+    const mins  = Math.floor(absMs / 60000);
+    const hours = Math.floor(absMs / 3600000);
+    const days  = Math.floor(absMs / 86400000);
+
+    if (diffMs < 0) {
+        let label = days >= 1 ? `${days} day(s)` : hours >= 1 ? `${hours} hour(s)` : `${Math.max(mins, 1)} minute(s)`;
+        return { cls: ' overdue', badge: `<span class="r-badge overdue">⚠️ Overdue by ${label}</span>` };
+    }
+    if (days >= 4)  return { cls: '', badge: `<span class="r-badge">⏳ In ${days} day(s)</span>` };
+    if (days === 3) return { cls: ' countdown-3', badge: `<span class="r-badge countdown-3">⏳ In 3 days</span>` };
+    if (days === 2) return { cls: ' countdown-2', badge: `<span class="r-badge countdown-2">⏳ In 2 days</span>` };
+    if (days === 1) return { cls: ' countdown-1', badge: `<span class="r-badge countdown-1">🔥 In 1 day</span>` };
+    // Same calendar day left — show hours/minutes instead of a misleading day count
+    if (hours >= 1) return { cls: ' countdown-1', badge: `<span class="r-badge countdown-1">🚨 In ${hours} hour(s)</span>` };
+    if (mins >= 1)  return { cls: ' countdown-1', badge: `<span class="r-badge countdown-1">🚨 In ${mins} min</span>` };
+    return { cls: ' countdown-1', badge: `<span class="r-badge countdown-1">🚨 Now!</span>` };
 }
 
 // ── AUTH ──
@@ -900,7 +962,7 @@ function startDatabaseSync() {
 
 // ── CRUD ──
 window.saveReminder = async function() {
-    const reminder = gatherFormData('title','date','time','frequency','customDays','customUnit','category','location','notes');
+    const reminder = gatherFormData('title','date','time','frequency','custom','category','location','notes');
     if (!reminder) return;
     reminder.id = Date.now().toString(); reminder.status = 'pending';
     const btn = document.getElementById('submitBtn');
@@ -919,7 +981,7 @@ window.saveReminder = async function() {
 };
 
 window.updateReminder = async function() {
-    const updated = gatherFormData('editTitle','editDate','editTime','editFrequency','editCustomDays','editCustomUnit','editCategory','editLocation','editNotes');
+    const updated = gatherFormData('editTitle','editDate','editTime','editFrequency','editCustom','editCategory','editLocation','editNotes');
     if (!updated) return;
     updated.id = window.editingId; updated.status = 'pending';
     const btn = document.getElementById('updateBtn');
@@ -950,22 +1012,36 @@ window.confirmDelete = async function() {
 };
 
 // ── HELPERS ──
-function gatherFormData(t, d, tm, f, cd, cu, c, l, n) {
+function gatherFormData(t, d, tm, f, prefix, c, l, n) {
     const title = document.getElementById(t).value.trim();
     const date  = document.getElementById(d).value;
     const time  = document.getElementById(tm).value;
     const freq  = document.getElementById(f).value;
-    const cDays = document.getElementById(cd).value;
-    const cUnit = document.getElementById(cu).value || 'days';
-    if (!title || !date || !time) { showToast('Missing required fields.', false); return null; }
+
+    let customDays = 0, customHours = 0, customMinutes = 0, customUnit = 'days';
+    
     if (freq === 'custom') {
-        const minVal = cUnit === 'days' ? 2 : 1;
-        if (!cDays || parseInt(cDays) < minVal) { showToast(`Invalid repeat value (min ${minVal} ${cUnit}).`, false); return null; }
+        customUnit = document.getElementById(`${prefix}Type`).value; // 'days'|'hours'|'minutes'
+        const label = customUnit.charAt(0).toUpperCase() + customUnit.slice(1);
+        const raw = document.getElementById(`${prefix}${label}Val`).value;
+        const minVal = customUnit === 'days' ? 2 : 1;
+        
+        if (!raw || parseInt(raw) < minVal) { 
+            showToast(`Invalid repeat value (min ${minVal} ${customUnit}).`, false); 
+            return null; 
+        }
+        
+        const val = parseInt(raw);
+        if (customUnit === 'days') customDays = val;
+        else if (customUnit === 'hours') customHours = val;
+        else if (customUnit === 'minutes') customMinutes = val;
     }
+
+    if (!title || !date || !time) { showToast('Missing required fields.', false); return null; }
+    
     return {
         title, date, time, frequency: freq,
-        customDays: freq === 'custom' ? parseInt(cDays) : 0,
-        customUnit: freq === 'custom' ? cUnit : 'days',
+        customUnit, customDays, customHours, customMinutes,
         category:   document.getElementById(c).value || 'medicine',
         location:   document.getElementById(l).value.trim(),
         notes:      document.getElementById(n).value.trim()
@@ -988,40 +1064,8 @@ window.renderList = function() {
         const freqLabel = getFreqLabel(r);
         const catIcon = CAT_ICONS[r.category] || '🔔';
 
-        // COUNTDOWN LOGIC — 3-day escalation: orange -> darker orange -> red, overdue = deepest red
-        let countdownClass = '';
-        let countdownBadge = '';
-
-        if (r.date) {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // Normalize time to midnight
-
-            // Handle date parsing safely assuming 'YYYY-MM-DD' structure
-            const [y, m, d] = r.date.split('-');
-            const remDate = new Date(y, m - 1, d);
-
-            const diffTime = remDate - today;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            if (diffDays < 0) {
-                countdownClass = ' overdue';
-                countdownBadge = `<span class="r-badge overdue">⚠️ Overdue by ${Math.abs(diffDays)} day(s)</span>`;
-            } else if (diffDays === 0) {
-                countdownClass = ' countdown-1';
-                countdownBadge = `<span class="r-badge countdown-1">🚨 Today!</span>`;
-            } else if (diffDays === 1) {
-                countdownClass = ' countdown-1';
-                countdownBadge = `<span class="r-badge countdown-1">🔥 In 1 day</span>`;
-            } else if (diffDays === 2) {
-                countdownClass = ' countdown-2';
-                countdownBadge = `<span class="r-badge countdown-2">⏳ In 2 days</span>`;
-            } else if (diffDays === 3) {
-                countdownClass = ' countdown-3';
-                countdownBadge = `<span class="r-badge countdown-3">⏳ In 3 days</span>`;
-            } else {
-                countdownBadge = `<span class="r-badge">⏳ In ${diffDays} day(s)</span>`;
-            }
-        }
+        // COUNTDOWN — reflects the actual date + time only (independent of repeat frequency)
+        const { cls: countdownClass, badge: countdownBadge } = getCountdownInfo(r);
 
         return `
         <div class="reminder-item${countdownClass}" onclick="window.viewReminder('${r.id}')">
@@ -1089,10 +1133,68 @@ window.renderArchive = function() {
 };
 
 window.markDone = async function(id) {
+    const r = window.reminders.find(x => x.id === id);
+    if (!r) return;
+
+    // DIAGNOSTIC — open DevTools Console (F12) before clicking ✅ to see
+    // exactly what this reminder's frequency/custom fields actually are.
+    console.log('[markDone] reminder data:', {
+        frequency: r.frequency,
+        customUnit: r.customUnit,
+        customDays: r.customDays,
+        customHours: r.customHours,
+        customMinutes: r.customMinutes,
+        date: r.date,
+        time: r.time
+    });
+
     try {
-        await update(ref(db, 'reminders/' + id), { status: 'done', completedAt: Date.now() });
-        showToast('✅ Marked as done — moved to Archive.');
+        // 1. If it is a custom schedule, reschedule it continuously
+        // (normalize frequency in case of stray whitespace/casing from older data)
+        const freq = (r.frequency || '').trim().toLowerCase();
+        if (freq === 'custom') {
+            let nextDate = new Date(`${r.date}T${r.time || '00:00'}`);
+            
+            // customDays/customHours/customMinutes are stored as three separate
+            // fields (see gatherFormData) — only the one matching customUnit is
+            // non-zero. Read whichever one actually applies, but fall back to
+            // whichever field DOES have a value for reminders created before
+            // this three-field schema existed (those older records only ever
+            // populated "customDays", regardless of unit).
+            const unit = (r.customUnit || 'days').trim().toLowerCase();
+            const primary = unit === 'days' ? r.customDays : unit === 'hours' ? r.customHours : r.customMinutes;
+            const amount = parseInt(primary) || parseInt(r.customDays) || parseInt(r.customHours) || parseInt(r.customMinutes) || 1;
+            
+            if (unit === 'days')    nextDate.setDate(nextDate.getDate() + amount);
+            if (unit === 'hours')   nextDate.setHours(nextDate.getHours() + amount);
+            if (unit === 'minutes') nextDate.setMinutes(nextDate.getMinutes() + amount);
+
+            // Format the calculated date back for Firebase
+            const y = nextDate.getFullYear();
+            const mo = String(nextDate.getMonth() + 1).padStart(2, '0');
+            const d = String(nextDate.getDate()).padStart(2, '0');
+            const newDateStr = `${y}-${mo}-${d}`;
+            
+            const hh = String(nextDate.getHours()).padStart(2, '0');
+            const mi = String(nextDate.getMinutes()).padStart(2, '0');
+            const newTimeStr = `${hh}:${mi}`;
+
+            // Update in-place (Keeps status as 'pending', just changes the date/time)
+            await update(ref(db, 'reminders/' + id), { 
+                date: newDateStr, 
+                time: newTimeStr 
+            });
+            
+            showToast(`⏳ Rescheduled for ${newTimeStr}!`);
+            
+        } else {
+            // 2. For ALL other schedules, mark as done and move to Archive
+            await update(ref(db, 'reminders/' + id), { status: 'done', completedAt: Date.now() });
+            showToast('✅ Marked as done — moved to Archive.');
+        }
+
     } catch (e) {
+        console.error(e);
         showToast('⚠️ Error updating.', false);
     }
 };
@@ -1175,16 +1277,29 @@ window.openEdit = function(id) {
     const r = window.reminders.find(x => x.id === id);
     if (!r) return;
     window.editingId = id;
+    
     document.getElementById('editTitle').value     = r.title    || '';
     document.getElementById('editDate').value      = r.date     || '';
     document.getElementById('editTime').value      = r.time     || '';
     document.getElementById('editFrequency').value = r.frequency|| 'none';
     document.getElementById('editLocation').value  = r.location || '';
     document.getElementById('editNotes').value     = r.notes    || '';
-    document.getElementById('editCustomDaysDiv').style.display = r.frequency === 'custom' ? 'block' : 'none';
-    document.getElementById('editCustomDays').value = r.customDays || '';
-    document.getElementById('editCustomUnit').value = r.customUnit || 'days';
-    window.updateCustomMin('editCustomDays','editCustomUnit');
+    
+    const isCustom = r.frequency === 'custom';
+    const unit = r.customUnit || 'days';
+    
+    document.getElementById('editCustomTypeDiv').style.display = isCustom ? 'block' : 'none';
+    document.getElementById('editCustomDiv').style.display     = isCustom ? 'block' : 'none';
+    document.getElementById('editCustomType').value = unit;
+    
+    if (isCustom) {
+        window.toggleCustomType('editCustom');
+        // Pull from the newly separated variables
+        if (unit === 'days') document.getElementById('editCustomDaysVal').value = r.customDays || '';
+        if (unit === 'hours') document.getElementById('editCustomHoursVal').value = r.customHours || '';
+        if (unit === 'minutes') document.getElementById('editCustomMinutesVal').value = r.customMinutes || '';
+    }
+    
     document.querySelectorAll('#editModalCats .cat-btn').forEach(b => b.classList.toggle('active', b.dataset.value === r.category));
     document.getElementById('editCategory').value = r.category || 'medicine';
     window.openModal('editModal');
@@ -1203,21 +1318,30 @@ window.selectCategory = function(btn, sid) {
     document.getElementById(sid).value = btn.dataset.value;
 };
 
-window.toggleCustomDays = function(dId, iId, sId, uId) {
+window.toggleCustomDays = function(sId, prefix) {
     const freq = document.getElementById(sId).value;
-    document.getElementById(dId).style.display = freq === 'custom' ? 'block' : 'none';
-    if (freq !== 'custom') {
-        document.getElementById(iId).value = '';
-        if (uId) document.getElementById(uId).value = 'days';
+    const isCustom = freq === 'custom';
+    document.getElementById(`${prefix}TypeDiv`).style.display = isCustom ? 'block' : 'none';
+    document.getElementById(`${prefix}Div`).style.display     = isCustom ? 'block' : 'none';
+    if (isCustom) {
+        window.toggleCustomType(prefix);
+    } else {
+        ['Days','Hours','Minutes'].forEach(u => {
+            document.getElementById(`${prefix}${u}FieldDiv`).style.display = 'none';
+            document.getElementById(`${prefix}${u}Val`).value = '';
+        });
     }
 };
 
-// Minutes/Hours can repeat from 1, Days needs at least 2 (matches previous behavior)
-window.updateCustomMin = function(iId, uId) {
-    const unit = document.getElementById(uId).value;
-    const input = document.getElementById(iId);
-    input.min = unit === 'days' ? '2' : '1';
-    if (parseInt(input.value) < parseInt(input.min)) input.value = input.min;
+// Shows only the one field group matching the selected custom type
+// (Days / Hours / Minutes) — each is its own input, so they can never
+// combine or overwrite one another.
+window.toggleCustomType = function(prefix) {
+    const type = document.getElementById(`${prefix}Type`).value; // 'days'|'hours'|'minutes'
+    ['days','hours','minutes'].forEach(u => {
+        const label = u.charAt(0).toUpperCase() + u.slice(1);
+        document.getElementById(`${prefix}${label}FieldDiv`).style.display = (u === type) ? 'block' : 'none';
+    });
 };
 
 // Close modal on overlay click
@@ -1241,7 +1365,19 @@ function setCloudStatus(t,m) {
     if (dStatus) dStatus.innerHTML = dotHtml;
 }
 function showToast(msg)     { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 3000); }
-function resetForm()        { ['title','date','time','location','notes'].forEach(id => document.getElementById(id).value=''); document.getElementById('frequency').value='none'; document.getElementById('customDaysDiv').style.display='none'; document.getElementById('customDays').value=''; document.getElementById('customUnit').value='days'; document.querySelectorAll('#createPanel .cat-btn').forEach((b,i)=>b.classList.toggle('active',i===0)); document.getElementById('category').value='medicine'; }
+function resetForm() {
+    ['title','date','time','location','notes'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('frequency').value = 'none';
+    document.getElementById('customTypeDiv').style.display = 'none';
+    document.getElementById('customDiv').style.display = 'none';
+    document.getElementById('customType').value = 'days';
+    ['Days','Hours','Minutes'].forEach(u => {
+        document.getElementById(`custom${u}FieldDiv`).style.display = 'none';
+        document.getElementById(`custom${u}Val`).value = '';
+    });
+    document.querySelectorAll('#createPanel .cat-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+    document.getElementById('category').value = 'medicine';
+}
 function escHtml(s)         { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // Set initial list-grid state to match default active tab (create)
