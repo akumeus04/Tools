@@ -510,7 +510,7 @@
     <!-- ── DESKTOP SIDEBAR ── -->
     <aside class="sidebar">
 <div class="sidebar-brand">
-    <div class="header-icon">🔔</div>
+    <div class="header-icon">🚨</div>
     <div>
         <div class="header-title" style="display: flex; align-items: center; gap: 8px;">
             Reminders <div id="cloudStatusDesktop"></div>
@@ -549,7 +549,7 @@
         <div class="mobile-header">
             <div class="header-inner">
                 <div class="header-brand">
-                    <div class="header-icon">🔔</div>
+                    <div class="header-icon">🚨</div>
                     <div>
                         <div class="header-title" style="display: flex; align-items: center; gap: 8px;">
                             Reminders <div id="cloudStatusMobile"></div>
@@ -1074,14 +1074,14 @@ window.renderList = function() {
     const active = window.reminders.filter(r => r.status !== 'done');
     const filtered = window.currentFilter === 'all' ? active : active.filter(r => r.category === window.currentFilter);
     if (filtered.length === 0) {
-        container.innerHTML = `<div class="empty-state"><div class="empty-icon">🔔</div><p>No reminders found.</p></div>`;
+        container.innerHTML = `<div class="empty-state"><div class="empty-icon">🚨</div><p>No reminders found.</p></div>`;
         return;
     }
     const sorted = [...filtered].sort((a,b) => new Date((a.date||'')+'T'+(a.time||'')) - new Date((b.date||'')+'T'+(b.time||'')));
 
     container.innerHTML = sorted.map(r => {
         const freqLabel = getFreqLabel(r);
-        const catIcon = CAT_ICONS[r.category] || '🔔';
+        const catIcon = CAT_ICONS[r.category] || '🚨';
 
         // COUNTDOWN — reflects the actual date + time only (independent of repeat frequency)
         const { cls: countdownClass, badge: countdownBadge } = getCountdownInfo(r);
@@ -1125,7 +1125,7 @@ window.renderArchive = function() {
 
     container.innerHTML = sorted.map(r => {
         const freqLabel = getFreqLabel(r);
-        const catIcon = CAT_ICONS[r.category] || '🔔';
+        const catIcon = CAT_ICONS[r.category] || '🚨';
         return `
         <div class="reminder-item status-done" onclick="window.viewReminder('${r.id}')">
             <div class="reminder-item-top">
@@ -1272,7 +1272,7 @@ window.viewReminder = function(id) {
     window.editingId = id;
     const isDone = r.status === 'done';
     const freqLabel = getFreqLabel(r);
-    document.getElementById('viewModalTitle').textContent = (CAT_ICONS[r.category]||'🔔') + ' ' + (r.title||'Untitled');
+    document.getElementById('viewModalTitle').textContent = (CAT_ICONS[r.category]||'🚨') + ' ' + (r.title||'Untitled');
     document.getElementById('viewModalBody').innerHTML = `
         <div class="detail-row"><span class="detail-icon">🏷️</span><div><div class="detail-key">Category</div><div class="detail-val">${CAT_LABELS[r.category]||r.category}</div></div></div>
         <div class="detail-row"><span class="detail-icon">📆</span><div><div class="detail-key">Date</div><div class="detail-val">${r.date||'—'}</div></div></div>
