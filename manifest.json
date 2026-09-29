@@ -2,7 +2,7 @@
   "name": "My Reminders",
   "short_name": "Reminders",
   "start_url": "./Reminder.html",
-  "display": "fullscreen",
+  "display": "standalone",
   "background_color": "#EEF2FF",
   "theme_color": "#4F46E5",
   "icons": [
