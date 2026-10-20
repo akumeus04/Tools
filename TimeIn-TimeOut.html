@@ -50,7 +50,7 @@
       min-height: 380px;
     }
 
-    /* ── Dark Clock Card (Matches 'Permissions' Card) ── */
+    /* ── Dark Clock Card ── */
     .clock-card {
       background: var(--brand-dark);
       color: #ffffff;
@@ -134,7 +134,7 @@
       border-color: #efefef;
     }
 
-    /* ── Red Result Card (Matches 'Absent' Card) ── */
+    /* ── Red Result Card ── */
     .result-card {
       background: var(--brand-red);
       color: #ffffff;
@@ -174,7 +174,7 @@
       letter-spacing: 0.3px;
     }
 
-    /* Fallback layout for narrower desktop screens/tablets */
+    /* Responsive layout */
     @media (max-width: 900px) {
       .wrap {
         grid-template-columns: 1fr;
@@ -189,7 +189,7 @@
 <body>
 <div class="wrap">
 
-  <!-- 1. Clock Card (Dark Theme) -->
+  <!-- 1. Clock Card -->
   <div class="tc-card clock-card">
     <canvas id="clockFace" width="180" height="180"></canvas>
     <div>
@@ -201,7 +201,7 @@
     </div>
   </div>
 
-  <!-- 2. Shift Configuration Card (White Theme) -->
+  <!-- 2. Shift Configuration Card -->
   <div class="tc-card config-card">
     <div class="section-label">Shift Configuration</div>
     <div class="field">
@@ -218,7 +218,7 @@
     </div>
   </div>
 
-  <!-- 3. Result Card (Red Theme) -->
+  <!-- 3. Result Card -->
   <div class="tc-card result-card">
     <div class="result-content">
       <div class="result-label">Expected Time-out</div>
@@ -339,10 +339,34 @@
       `${days[now.getDay()]}  ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
   }
 
+  /* ── LocalStorage Operations ── */
+  function loadSavedInputs() {
+    const savedTime = localStorage.getItem('tc_timeInput');
+    const savedBreak = localStorage.getItem('tc_breakMin');
+
+    if (savedTime !== null) {
+      document.getElementById('timeInput').value = savedTime;
+    }
+    if (savedBreak !== null) {
+      document.getElementById('breakMin').value = savedBreak;
+    }
+  }
+
+  function saveInputs() {
+    const timeVal = document.getElementById('timeInput').value;
+    const breakVal = document.getElementById('breakMin').value;
+
+    localStorage.setItem('tc_timeInput', timeVal);
+    localStorage.setItem('tc_breakMin', breakVal);
+  }
+
   /* ── Calculation Engine ── */
   function calculate() {
     const t   = document.getElementById('timeInput').value;
     const brk = parseInt(document.getElementById('breakMin').value) || 0;
+    
+    saveInputs();
+
     if (!t) return;
 
     const [hh, mm] = t.split(':').map(Number);
@@ -375,6 +399,8 @@
   /* ── Init ── */
   setInterval(drawClock, 50);
   drawClock();
+
+  loadSavedInputs();
   calculate();
 
   document.getElementById('timeInput').addEventListener('input', calculate);
