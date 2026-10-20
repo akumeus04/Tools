@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TextComposer - Write Music with Text</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FAFAFA;
+        }
+        .font-mono {
+            font-family: 'Fira Code', monospace;
+        }
+        /* Custom scrollbar for the textarea */
+        textarea::-webkit-scrollbar {
+            width: 8px;
+        }
+        textarea::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-radius: 4px;
+        }
+        textarea::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body class="text-gray-800 min-h-screen flex flex-col">
+
+    <!-- Top Navigation / Controls -->
+    <header class="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-10">
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center text-white font-bold text-xl shadow-md">
+                    ♪
+                </div>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-pink-500">
+                    TextComposer
+                </h1>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
+                    <label for="bpm" class="text-sm font-medium text-gray-500">BPM</label>
+                    <input type="number" id="bpm" value="120" min="40" max="300" class="w-16 bg-transparent text-gray-800 font-semibold focus:outline-none text-right">
+                </div>
+                
+                <button id="btn-play" class="flex items-center gap-2 px-5 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold shadow-md shadow-pink-500/20 hover:shadow-lg hover:shadow-pink-500/40 transform hover:-translate-y-0.5 transition-all active:translate-y-0">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    Play
+                </button>
+                
+                <button id="btn-stop" class="flex items-center gap-2 px-5 py-2 rounded-lg bg-white border border-gray-200 text-gray-600 font-semibold shadow-sm hover:bg-gray-50 hover:text-red-500 transition-colors active:bg-gray-100">
+                    <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
+                    Stop
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-6xl mx-auto w-full px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Editor Section -->
+        <section class="lg:col-span-2 flex flex-col gap-3">
+            <div class="flex justify-between items-end">
+                <h2 class="text-lg font-semibold text-gray-700">Composition Editor</h2>
+                <span id="status-indicator" class="text-sm font-medium text-gray-400 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-gray-300 inline-block" id="status-dot"></span>
+                    Ready
+                </span>
+            </div>
+            <textarea id="editor" spellcheck="false" class="w-full h-[500px] p-6 bg-white border border-gray-200 rounded-xl shadow-inner font-mono text-lg text-gray-700 leading-relaxed focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-shadow resize-y" placeholder="Write your music here...">
+[C4,E4,G4]:h [G3,B3,D4]:h 
+[A3,C4,E4]:h [F3,A3,C4]:h 
+
+C4:q D4:q E4:e F4:e G4:h 
+R:q 
+C5:w</textarea>
+            <div id="highlighter" class="w-full h-[500px] p-6 bg-white border border-gray-200 rounded-xl shadow-inner font-mono text-lg text-gray-700 leading-relaxed overflow-y-auto hidden whitespace-pre-wrap break-words"></div>
+        </section>
+
+        <!-- Syntax Legend Sidebar -->
+        <aside class="flex flex-col gap-6">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Syntax Guide
+                </h3>
+                
+                <div class="space-y-4 text-sm text-gray-600">
+                    <p>Write your music using space-separated tokens. The general format is <code class="bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded font-mono">Note:Duration</code>.</p>
+                    
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-1">Single Notes</h4>
+                        <p class="mb-1">Note name, optional accidental (<code class="font-mono">#</code> or <code class="font-mono">b</code>), and octave number.</p>
+                        <code class="block bg-gray-50 p-2 rounded border border-gray-100 font-mono text-gray-800">C4:q  D#4:e  Bb3:w</code>
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-1">Chords</h4>
+                        <p class="mb-1">Wrap comma-separated notes in square brackets.</p>
+                        <code class="block bg-gray-50 p-2 rounded border border-gray-100 font-mono text-gray-800">[C4,E4,G4]:h</code>
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-1">Rests</h4>
+                        <p class="mb-1">Use <code class="font-mono">R</code> to insert silence.</p>
+                        <code class="block bg-gray-50 p-2 rounded border border-gray-100 font-mono text-gray-800">R:e  R:q</code>
+                    </div>
+
+                    <hr class="border-gray-100">
+
+                    <div>
+                        <h4 class="font-semibold text-gray-700 mb-2">Durations</h4>
+                        <ul class="grid grid-cols-2 gap-2 font-mono">
+                            <li class="flex items-center gap-2"><span class="w-6 h-6 rounded bg-pink-100 text-pink-600 flex items-center justify-center font-bold">w</span> Whole (4)</li>
+                            <li class="flex items-center gap-2"><span class="w-6 h-6 rounded bg-pink-100 text-pink-600 flex items-center justify-center font-bold">h</span> Half (2)</li>
+                            <li class="flex items-center gap-2"><span class="w-6 h-6 rounded bg-pink-100 text-pink-600 flex items-center justify-center font-bold">q</span> Quarter (1)</li>
+                            <li class="flex items-center gap-2"><span class="w-6 h-6 rounded bg-pink-100 text-pink-600 flex items-center justify-center font-bold">e</span> Eighth (0.5)</li>
+                            <li class="flex items-center gap-2"><span class="w-6 h-6 rounded bg-pink-100 text-pink-600 flex items-center justify-center font-bold">s</span> Sixteenth (0.25)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gradient-to-br from-orange-50 to-pink-50 rounded-xl p-6 border border-orange-100">
+                <h4 class="font-semibold text-orange-800 mb-2">Pro Tip</h4>
+                <p class="text-sm text-orange-700/80">Newlines and extra spaces are ignored. Group your chords and melodies onto different lines to make your composition easier to read!</p>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+        // --- Web Audio API Engine ---
+        let audioCtx;
+        let activeOscillators = [];
+        let isPlaying = false;
+        let sequenceTimeout; // To handle UI reset when song ends
+        let animationFrameId; // For highlighting loop
+        let playSequence = []; // Store token timing and position
+        let baseText = ""; 
+        let audioStartTime = 0;
+
+        // Standard duration multipliers (1 quarter note = 1 beat)
+        const DURATIONS = {
+            'w': 4.0,
+            'h': 2.0,
+            'q': 1.0,
+            'e': 0.5,
+            's': 0.25
+        };
+
+        // Note to semitone offset map
+        const NOTE_OFFSETS = {
+            'C': 0, 'C#': 1, 'DB': 1, 'D': 2, 'D#': 3, 'EB': 3,
+            'E': 4, 'F': 5, 'F#': 6, 'GB': 6, 'G': 7, 'G#': 8,
+            'AB': 8, 'A': 9, 'A#': 10, 'BB': 10, 'B': 11
+        };
+
+        // UI Elements
+        const btnPlay = document.getElementById('btn-play');
+        const btnStop = document.getElementById('btn-stop');
+        const editor = document.getElementById('editor');
+        const highlighter = document.getElementById('highlighter');
+        const bpmInput = document.getElementById('bpm');
+        const statusText = document.getElementById('status-indicator');
+        const statusDot = document.getElementById('status-dot');
+
+        // Helper: Convert Note string (e.g., "C4", "G#3") to Frequency in Hz
+        function getFrequency(noteString) {
+            const noteClean = noteString.trim().toUpperCase();
+            if (noteClean === 'R') return 0; // Rest indicator
+
+            const match = noteClean.match(/^([A-G][#B]?)([0-9])$/);
+            if (!match) return null; // Invalid note format
+
+            const note = match[1];
+            const octave = parseInt(match[2], 10);
+
+            if (NOTE_OFFSETS[note] === undefined) return null;
+
+            // MIDI Note calculation (C4 = 60, A4 = 69)
+            // Octave 4 starts at MIDI note 60.
+            const midiNote = (octave + 1) * 12 + NOTE_OFFSETS[note];
+            
+            // Convert MIDI note to Frequency (A4 = 440Hz)
+            return 440 * Math.pow(2, (midiNote - 69) / 12);
+        }
+
+        // Initialize Audio Context (requires user interaction)
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Stop all sound immediately
+        function stopAudio() {
+            if (activeOscillators.length > 0) {
+                activeOscillators.forEach(node => {
+                    try {
+                        node.osc.stop();
+                        node.osc.disconnect();
+                        node.gain.disconnect();
+                    } catch (e) { /* Ignore stopping errors */ }
+                });
+                activeOscillators = [];
+            }
+            clearTimeout(sequenceTimeout);
+            cancelAnimationFrame(animationFrameId);
+            setUIStatus('Ready', 'bg-gray-300', false);
+            
+            // Restore UI
+            editor.classList.remove('hidden');
+            highlighter.classList.add('hidden');
+        }
+
+        // Play the composition
+        function playComposition() {
+            initAudio();
+            stopAudio(); // Ensure clean slate
+
+            baseText = editor.value;
+            const bpm = parseFloat(bpmInput.value) || 120;
+            const beatDurationSeconds = 60 / bpm;
+
+            const regex = /\S+/g;
+            let match;
+            playSequence = [];
+            
+            // Start scheduling slightly in the future to ensure smooth initial playback
+            audioStartTime = audioCtx.currentTime + 0.1;
+            let currentTimeOffset = 0;
+
+            while ((match = regex.exec(baseText)) !== null) {
+                const token = match[0];
+                const startIdx = match.index;
+                const endIdx = regex.lastIndex;
+
+                // Split note/chord and duration (e.g., "C4:q")
+                const parts = token.split(':');
+                const notation = parts[0].trim();
+                let durationSeconds = beatDurationSeconds; // Default duration
+                
+                if (parts.length === 2) {
+                    const durationKey = parts[1].trim().toLowerCase();
+                    const beats = DURATIONS[durationKey] || 1;
+                    durationSeconds = beats * beatDurationSeconds;
+                }
+
+                playSequence.push({
+                    token: token,
+                    startIdx: startIdx,
+                    endIdx: endIdx,
+                    startTime: currentTimeOffset,
+                    endTime: currentTimeOffset + durationSeconds
+                });
+
+                if (notation.toUpperCase() !== 'R') {
+                    // Determine if chord or single note
+                    let notesToPlay = [];
+                    if (notation.startsWith('[') && notation.endsWith(']')) {
+                        // Chord parsing: [C4,E4,G4]
+                        const innerText = notation.slice(1, -1);
+                        notesToPlay = innerText.split(',').map(n => n.trim());
+                    } else {
+                        // Single note
+                        notesToPlay = [notation];
+                    }
+
+                    // Schedule each note in the chord (or the single note)
+                    notesToPlay.forEach(noteStr => {
+                        const freq = getFrequency(noteStr);
+                        if (freq) {
+                            scheduleNote(freq, audioStartTime + currentTimeOffset, durationSeconds);
+                        }
+                    });
+                }
+
+                // Advance time for the next token
+                currentTimeOffset += durationSeconds;
+            }
+
+            if (playSequence.length === 0) return;
+
+            setUIStatus('Playing...', 'bg-green-500 animate-pulse', true);
+
+            // Swap UI for highlighting
+            editor.classList.add('hidden');
+            highlighter.classList.remove('hidden');
+            highlighter.textContent = baseText; // Set initial text
+
+            // Start highlighting loop
+            highlightLoop();
+
+            // Set UI back to Ready when sequence is projected to finish
+            const totalDurationMs = currentTimeOffset * 1000;
+            sequenceTimeout = setTimeout(() => {
+                stopAudio();
+            }, totalDurationMs + 150); // Add a tiny buffer
+        }
+
+        // Animation loop for highlighting text
+        function highlightLoop() {
+            if (!isPlaying) return;
+
+            const now = audioCtx.currentTime;
+            const elapsed = now - audioStartTime;
+
+            // Find active token
+            let activeTokenIndex = -1;
+            for (let i = 0; i < playSequence.length; i++) {
+                if (elapsed >= playSequence[i].startTime && elapsed < playSequence[i].endTime) {
+                    activeTokenIndex = i;
+                    break;
+                }
+            }
+
+            if (activeTokenIndex !== -1) {
+                const item = playSequence[activeTokenIndex];
+                const before = baseText.substring(0, item.startIdx);
+                const active = baseText.substring(item.startIdx, item.endIdx);
+                const after = baseText.substring(item.endIdx);
+
+                // Basic HTML escaping to prevent rendering issues
+                const escapeHTML = (str) => str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+                highlighter.innerHTML = 
+                    escapeHTML(before) + 
+                    `<mark class="bg-pink-500 text-white rounded shadow-sm">${escapeHTML(active)}</mark>` + 
+                    escapeHTML(after);
+            } else if (elapsed < 0) {
+                // Before first note plays
+                highlighter.textContent = baseText;
+            }
+
+            animationFrameId = requestAnimationFrame(highlightLoop);
+        }
+
+        // Schedule a single oscillator tone with an envelope
+        function scheduleNote(frequency, startTime, duration) {
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            // Set wave type (triangle gives a nice classic synthesizer tone)
+            osc.type = 'triangle';
+            osc.frequency.value = frequency;
+
+            // Envelope Configuration (Prevents clicking/popping)
+            // Adjust attack and release times relative to note length
+            const attackTime = Math.min(0.02, duration * 0.1); 
+            const releaseTime = Math.min(0.05, duration * 0.2);
+            
+            // Lower max volume to prevent clipping when multiple notes (chords) play simultaneously
+            const maxVolume = 0.15;
+
+            // Apply Envelope using linear ramps
+            gainNode.gain.setValueAtTime(0, startTime);
+            gainNode.gain.linearRampToValueAtTime(maxVolume, startTime + attackTime);
+            gainNode.gain.setValueAtTime(maxVolume, startTime + duration - releaseTime);
+            gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+
+            // Connect nodes
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            // Start and Stop precise timing
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+
+            // Store references so we can kill them if 'Stop' is pressed
+            activeOscillators.push({ osc, gain: gainNode });
+        }
+
+        // Helper to update visual UI state
+        function setUIStatus(text, dotClasses, playing) {
+            statusText.childNodes[1].nodeValue = text; // Update text node safely
+            statusDot.className = `w-2 h-2 rounded-full inline-block ${dotClasses}`;
+            isPlaying = playing;
+        }
+
+        // Event Listeners
+        btnPlay.addEventListener('click', playComposition);
+        btnStop.addEventListener('click', stopAudio);
+
+    </script>
+</body>
+</html>
